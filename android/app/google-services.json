@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "491586444810",
+    "firebase_url": "https://mahlmannapp.firebaseio.com",
+    "project_id": "mahlmannapp",
+    "storage_bucket": "mahlmannapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:491586444810:android:223d068c9a0089f12249f3",
+        "android_client_info": {
+          "package_name": "app.mahlmann"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "491586444810-n0tgm89o9l47ddc6vhqe57tq8rhp2i6s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.mahlmann",
+            "certificate_hash": "0ae656c6da8cd577032544f449e78ef9791f482f"
+          }
+        },
+        {
+          "client_id": "491586444810-0ecuorvvkuugjv62v6o7k46r4qnugdbq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSFga4yFb95An46D8OtIufHWMBqK6cKUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "491586444810-0ecuorvvkuugjv62v6o7k46r4qnugdbq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

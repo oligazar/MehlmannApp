@@ -5,6 +5,15 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/widgets/button_mahlmann.dart';
 
 class ScreenMap extends StatefulWidget {
+  final bool isLoading;
+  final bool hasError;
+
+  const ScreenMap({
+    Key key,
+    this.isLoading,
+    this.hasError,
+  }) : super(key: key);
+
   @override
   State<ScreenMap> createState() => ScreenMapState();
 }
@@ -26,72 +35,71 @@ class ScreenMapState extends State<ScreenMap> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-              zoomControlsEnabled: false,
-              mapType: MapType.normal,
-              initialCameraPosition: _kGooglePlex,
-              onMapCreated: (GoogleMapController controller) {
-                _controller.complete(controller);
-              }),
-          Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 44),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ButtonMahlmann(
-                    onPressed: () => {},
-                    text: "Messung starten",
-                  ),
-                  const SizedBox(width: 8),
-                  ButtonMahlmann(
-                    onPressed: () => {},
-                    text: "Felder suchen",
-                  ),
-                  const SizedBox(width: 8),
-                  ButtonMahlmann(
-                    onPressed: () => {},
-                    text: "Satz Inbox",
-                  ),
-                  const SizedBox(width: 8),
-                  ButtonMahlmann(
-                    onPressed: () => {},
-                    text: "Ausloggen",
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ButtonMahlmann(
-                    onPressed: () => {},
-                    text: "Aktuelle Position",
-                  ),
-                  const SizedBox(width: 8),
-                  ButtonMahlmann(
-                    onPressed: () => {},
-                    text: "Brunnen an/aus",
-                  ),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: _goToTheLake,
-      //   label: Text('To the lake!'),
-      //   icon: Icon(Icons.directions_boat),
-      // ),
+      body: widget.hasError
+          ? Center(child: Text("Firebase initialization error"))
+          : widget.isLoading
+              ? Center(child: Text("Loading..."))
+              : Stack(
+                  children: [
+                    GoogleMap(
+                        zoomControlsEnabled: false,
+                        mapType: MapType.normal,
+                        initialCameraPosition: _kGooglePlex,
+                        onMapCreated: (GoogleMapController controller) {
+                          _controller.complete(controller);
+                        }),
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 44),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ButtonMahlmann(
+                              onPressed: () => {},
+                              text: "Messung starten",
+                            ),
+                            const SizedBox(width: 8),
+                            ButtonMahlmann(
+                              onPressed: () => {},
+                              text: "Felder suchen",
+                            ),
+                            const SizedBox(width: 8),
+                            ButtonMahlmann(
+                              onPressed: () => {},
+                              text: "Satz Inbox",
+                            ),
+                            const SizedBox(width: 8),
+                            ButtonMahlmann(
+                              onPressed: () => {},
+                              text: "Ausloggen",
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ButtonMahlmann(
+                              onPressed: () => {},
+                              text: "Aktuelle Position",
+                            ),
+                            const SizedBox(width: 8),
+                            ButtonMahlmann(
+                              onPressed: () => {},
+                              text: "Brunnen an/aus",
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
     );
   }
 
