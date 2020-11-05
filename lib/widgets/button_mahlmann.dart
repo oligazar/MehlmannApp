@@ -12,9 +12,27 @@ class ButtonMahlmann extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FlatButton(
-      onPressed: () => {},
-      child: Text("Aktuelle Position"),
+    return SizedBox(
+      child: FlatButton(
+        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 16),
+        onPressed: () => {},
+        child: Container(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Text(
+              text,
+              style: TextStyle(
+                fontWeight: FontWeight.normal,
+                fontSize: 12
+              ),
+            ),
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: Colors.white.withAlpha(160),
+      ),
+      width: 50,
+      height: 86,
     );
   }
 }

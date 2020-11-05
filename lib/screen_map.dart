@@ -29,6 +29,7 @@ class ScreenMapState extends State<ScreenMap> {
       body: Stack(
         children: [
           GoogleMap(
+              zoomControlsEnabled: false,
               mapType: MapType.normal,
               initialCameraPosition: _kGooglePlex,
               onMapCreated: (GoogleMapController controller) {
@@ -37,7 +38,7 @@ class ScreenMapState extends State<ScreenMap> {
           Align(
             alignment: Alignment.topCenter,
             child: Padding(
-              padding: const EdgeInsets.only(top: 36.0),
+              padding: const EdgeInsets.only(top: 44),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -45,14 +46,17 @@ class ScreenMapState extends State<ScreenMap> {
                     onPressed: () => {},
                     text: "Messung starten",
                   ),
+                  const SizedBox(width: 8),
                   ButtonMahlmann(
                     onPressed: () => {},
                     text: "Felder suchen",
                   ),
+                  const SizedBox(width: 8),
                   ButtonMahlmann(
                     onPressed: () => {},
-                    text: "Saty Inbox",
+                    text: "Satz Inbox",
                   ),
+                  const SizedBox(width: 8),
                   ButtonMahlmann(
                     onPressed: () => {},
                     text: "Ausloggen",
@@ -64,7 +68,7 @@ class ScreenMapState extends State<ScreenMap> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 36.0),
+              padding: const EdgeInsets.only(bottom: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -72,6 +76,7 @@ class ScreenMapState extends State<ScreenMap> {
                     onPressed: () => {},
                     text: "Aktuelle Position",
                   ),
+                  const SizedBox(width: 8),
                   ButtonMahlmann(
                     onPressed: () => {},
                     text: "Brunnen an/aus",
