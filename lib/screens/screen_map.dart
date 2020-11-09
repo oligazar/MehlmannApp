@@ -2,23 +2,37 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mahlmann_app/blocs/bloc_maps.dart';
 import 'package:mahlmann_app/widgets/button_mahlmann.dart';
+import 'package:provider/provider.dart';
 
-class ScreenMap extends StatefulWidget {
+class ScreenMap extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Provider<BlocMap>(
+      create: (context) => BlocMap(),
+      dispose: (context, value) => value.dispose(),
+      child: ViewMap(),
+      lazy: false,
+    );
+  }
+}
+
+class ViewMap extends StatefulWidget {
   final bool isLoading;
   final bool hasError;
 
-  const ScreenMap({
+  const ViewMap({
     Key key,
     this.isLoading,
     this.hasError,
   }) : super(key: key);
 
   @override
-  State<ScreenMap> createState() => ScreenMapState();
+  State<ViewMap> createState() => ViewMapState();
 }
 
-class ScreenMapState extends State<ScreenMap> {
+class ViewMapState extends State<ViewMap> {
   Completer<GoogleMapController> _controller = Completer();
 
   static final CameraPosition _kGooglePlex = CameraPosition(
@@ -106,5 +120,12 @@ class ScreenMapState extends State<ScreenMap> {
   Future<void> _goToTheLake() async {
     final GoogleMapController controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
+  }
+
+  Future<void> _goToCurrentPosition() async {
+    // final loc = await currentLocation;
+    // final latLng = LatLng(loc.latitude, loc.longitude);
+    // final GoogleMapController controller = await _controller.future;
+    // controller.animateCamera(CameraUpdate.newCameraPosition(latLng));
   }
 }
