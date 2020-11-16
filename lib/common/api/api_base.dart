@@ -1,16 +1,12 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:dio/dio.dart' as dio;
 import 'package:dio/dio.dart';
 import 'package:mahlmann_app/common/constants.dart';
+import 'package:mahlmann_app/common/prefs.dart';
 import 'package:uuid/uuid.dart';
-import 'package:package_info/package_info.dart';
 
 class TokenExpiredException implements Exception {
-	String message;
-	
-	TokenExpiredException([this.message]);
+  String message;
+
+  TokenExpiredException([this.message]);
 }
 
 Future<dynamic> getToken() async => Future.value({});
@@ -18,28 +14,44 @@ Future<dynamic> getToken() async => Future.value({});
 String baseAuthority = AUTHORITY_PRODUCTION;
 
 class ApiBase {
-	
-	final dioClient = dio.Dio();
-	final uuid = Uuid();
-	
-	Future<dynamic> get headers async {
-		final token = await getToken();
-		const headers = {
-			'Accept': 'application/json',
-			'Content-Type': 'application/json',
-		};
-		
-		if (token) {
-			headers['uid'] = token.uid;
-			headers['client'] = token.client;
-			headers['expiry'] = token.expiry;
-		}
-		
-		return headers;
-	}
-	
-	/// Clean unused code
-	
+  final client = Dio();
+  final uuid = Uuid();
+
+  Future<dynamic> get headers async {
+    final data = await Prefs.getLoginResponse();
+    final headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+
+    if (data != null) {
+      headers['uid'] = data.email;
+      headers['client'] = data.token;
+      headers['expiry'] = data.expiry?.toString();
+    }
+
+    return headers;
+  }
+
+  Uri buildUri(
+    String method, [
+    Map<String, String> queryParameters,
+    String authority,
+  ]) {
+    Uri uri;
+    final auth = authority ?? baseAuthority;
+    
+    if (queryParameters != null) {
+      uri = Uri.https(auth, method, queryParameters);
+    } else {
+      uri = Uri.https(auth, method);
+    }
+    print("uri: $uri");
+    return uri;
+  }
+
+  /// Clean unused code
+
 // 	Future<String> get appVersion async {
 // 		final packageInfo = await PackageInfo.fromPlatform();
 // 		return packageInfo.version;
@@ -71,18 +83,7 @@ class ApiBase {
 // 			// 		"Authorization": "Token ${resp.token}",
 // 			// 	}));
 //
-// 	Uri buildUrl(String method,
-// 			[Map<String, String> queryParameters, String authority]) {
-// 		Uri uri;
-// 		final auth = authority ?? baseAuthority;
-// 		if (queryParameters != null) {
-// 			uri = Uri.https(auth, method, queryParameters);
-// 		} else {
-// 			uri = Uri.https(auth, method);
-// 		}
-// 		print("uri: $uri");
-// 		return uri;
-// 	}
+
 //
 // 	dynamic responseToJson(Response resp) {
 // 		final body = resp.data;

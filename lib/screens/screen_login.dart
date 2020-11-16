@@ -170,13 +170,9 @@ class _ViewLoginState extends State<ViewLogin> {
 
   void _tryLogin() async {
     if (_validateAndSave()) {
-      // call bloc to auth user
       final resp = await bloc.auth();
-      // show ui
       AppMahlmann.of(context).setIsAuthorized(resp?.token != null);
-//      TrackerNavigator.of(context).setUserInDrawer(resp?.name ?? "", resp?.email ?? "");
     } else {
-//    If all data are not valid then start auto validation.
       setState(() {
         _autoValidate = true;
       });

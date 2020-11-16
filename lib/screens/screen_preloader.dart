@@ -1,11 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:mahlmann_app/blocs/bloc_preloader.dart';
 import 'package:mahlmann_app/widgets/mahlmann_progress_indicator.dart';
+import 'package:provider/provider.dart';
+
 
 class ScreenPreloader extends StatelessWidget {
 	final Function onFetched;
 
-  const ScreenPreloader({Key key, this.onFetched}) : super(key: key);
-	
+	 ScreenPreloader(this.onFetched);
+
+	@override
+	Widget build(BuildContext context) {
+		return Provider<BlocPreloader>(
+			create: (context) => BlocPreloader(this.onFetched),
+			dispose: (context, value) => value.dispose(),
+			child: ViewPreloader(),
+			lazy: false,
+		);
+	}
+}
+
+class ViewPreloader extends StatefulWidget {
+
+  @override
+  _ViewPreloaderState createState() => _ViewPreloaderState();
+}
+
+class _ViewPreloaderState extends State<ViewPreloader> {
   @override
   Widget build(BuildContext context) {
     return Container(

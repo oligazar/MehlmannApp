@@ -49,7 +49,7 @@ class ViewMapState extends State<ViewMap> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: widget.hasError
+      body: widget?.hasError != false
           ? Center(child: Text("Firebase initialization error"))
           : widget.isLoading
               ? Center(child: Text("Loading..."))

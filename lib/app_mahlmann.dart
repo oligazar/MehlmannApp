@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/screens/screen_login.dart';
 import 'package:mahlmann_app/screens/screen_map.dart';
 import 'package:mahlmann_app/screens/screen_preloader.dart';
@@ -27,6 +28,12 @@ class AppMahlmann extends StatefulWidget {
 class _AppMahlmannState extends State<AppMahlmann> {
   bool _isAuthorized;
   bool _showPreloader = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    _initAsync();
+  }
 
   void setIsAuthorized(bool isAuthorized) {
     setState(() {
@@ -43,7 +50,7 @@ class _AppMahlmannState extends State<AppMahlmann> {
           return MaterialApp(
             title: 'Flutter Demo',
             theme: ThemeData(
-              primarySwatch: Colors.blue,
+              primarySwatch: Colors.green,
               visualDensity: VisualDensity.adaptivePlatformDensity,
             ),
             home: _buildHomeScreen(
@@ -66,14 +73,18 @@ class _AppMahlmannState extends State<AppMahlmann> {
     return _AppMahlmann(
       state: this,
       child: _isAuthorized == null
-          ? ScreenPreloader()
+          ? ViewPreloader()
           : _isAuthorized
               ? _showPreloader
-                  ? ScreenPreloader(onFetched: () {
+                  ? ScreenPreloader(() {
                       setState(() => _showPreloader = false);
                     })
                   : ScreenMap()
               : ScreenLogin(),
     );
+  }
+
+  Future<void> _initAsync() async {
+    setIsAuthorized(await Prefs.isAuthorized);
   }
 }
