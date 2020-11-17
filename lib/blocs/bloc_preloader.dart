@@ -1,8 +1,10 @@
 import 'package:mahlmann_app/common/api/api_client.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
+import 'package:mahlmann_app/common/sqlite/sqlite_client.dart';
 
 class BlocPreloader extends Disposable {
 	final _api = ApiClient();
+	final _db = SqliteClient();
 	final Function _onFetched;
 	
   BlocPreloader(this._onFetched) {
@@ -12,10 +14,18 @@ class BlocPreloader extends Disposable {
 	
 	Future<void> _fetchAndSaveFields() async {
 		final response = await _api.fetchFieldsResponse();
-		// TODO:
-		// await _db.insertFields(response.fields, shouldClearTable: true);
-		// await _db.insertUsers(response.users, shouldClearTable: true);
-		// await _db.insertFountains(response.fountains, shouldClearTable: true);
+		
+		await _db.insertUsers(response.users.toList());
+		await _db.insertFountains(response.fountains.toList());
+		await _db.insertFields(response.fields.toList());
+		
+		final users = await _db.queryUsers();
+		final fountains = await _db.queryFountains();
+		final fields = await _db.queryFields();
+		
+		print("users: $users");
+		print("fountains: $fountains");
+		print("fields: $fields");
 		print("articles updated successfully, size: $response");
 	}
 	

@@ -36,3 +36,5 @@ Future<LatLng> get currentLocation async {
 
 Future<String> get buildVersion async =>
 		PackageInfo.fromPlatform().then((i) => i.version);
+
+int get millis => DateTime.now().millisecondsSinceEpoch;
