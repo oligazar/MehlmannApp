@@ -55,11 +55,20 @@ class SqliteClient {
         shouldClearTable: shouldClearTable);
   }
 
-  Future<List<Field>> queryFields() async {
+  Future<List<Field>> queryFields({
+    String query = "",
+    int id,
+  }) async {
+    final argsCol = id != null && id > 0 ? COL_ID : null;
+    final args = argsCol != null ? [id] : null;
     return queryListIn(
       TABLE_FIELDS,
       Field.queryColumns,
       (m) => Field.fromDb(m),
+      queryCol: COL_NAME,
+      query: query,
+      argsCol: argsCol,
+      args: args
     );
   }
 

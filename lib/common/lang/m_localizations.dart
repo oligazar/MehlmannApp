@@ -15,6 +15,22 @@ class MLocalizations {
   String get hintPassword => "Enter your password";
 
   String get errorIncorrectPassword => "The password is incorrect";
+
+  String get startMeasurement => "Messung starten";
+  
+  String get searchField => "Search for fields";
+
+  String get setInbox => "Satz Inbox";
+
+  String get logOut => "Ausloggen";
+
+  String get currentPosition => "Aktuelle Position";
+
+  String get fountain => "Brunnen an/aus";
+
+  String get promptSearch => "Suche";
+
+  String get errorEmptyField => "Feld darf nicht leer sein";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	
