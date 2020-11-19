@@ -18,6 +18,8 @@ class MLocalizations {
 
   String get startMeasurement => "Messung starten";
   
+  String get stopMeasurement => "Messung beenden";
+  
   String get searchField => "Search for fields";
 
   String get setInbox => "Satz Inbox";
@@ -31,6 +33,8 @@ class MLocalizations {
   String get promptSearch => "Suche";
 
   String get errorEmptyField => "Feld darf nicht leer sein";
+
+  String get back => "Zurück";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

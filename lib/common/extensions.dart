@@ -45,3 +45,13 @@ extension StringExt on String {
 		return null;
 	}
 }
+
+extension SetExt<E> on Set<E> {
+	
+	void updateWhere(Set<E> newItems, bool test(E oldElement, E newElement)) {
+		newItems.forEach((newItem) {
+			this.removeWhere((item) => test(item, newItem));
+			this.add(newItem);
+		});
+	}
+}

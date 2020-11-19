@@ -12,27 +12,30 @@ class ButtonMahlmann extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      child: FlatButton(
-        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 16),
-        onPressed: onPressed,
-        child: Container(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: FontWeight.normal,
-                fontSize: 12
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: SizedBox(
+        child: FlatButton(
+          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 16),
+          onPressed: onPressed,
+          child: Container(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontSize: 12
+                ),
               ),
             ),
           ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          color: Colors.white.withAlpha(200),
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: Colors.white.withAlpha(200),
+        width: 50,
+        height: 86,
       ),
-      width: 50,
-      height: 86,
     );
   }
 }

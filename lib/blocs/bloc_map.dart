@@ -2,20 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/common/sqlite/sqlite_client.dart';
+import 'package:mahlmann_app/models/built_value/btns_mode.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
+import 'package:mahlmann_app/common/extensions.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mt;
 import 'package:rxdart/rxdart.dart' as rx;
 
 class BlocMap extends Disposable {
   final _db = SqliteClient();
   final _mapData = rx.BehaviorSubject<MapData>.seeded(MapData());
   final _bounds = rx.BehaviorSubject<LatLngBounds>();
+  final _area = rx.BehaviorSubject<double>();
+  final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
 
   Stream<MapData> get mapData => _mapData.stream;
 
   Stream<LatLngBounds> get bounds => _bounds.stream;
+
+  Stream<double> get area => _area.stream;
+
+  Stream<BtnsMode> get mode => _mode.stream;
+
+  // BtnsMode get currentMode => _mode.value;
 
   BlocMap() {
     _prepareData();
@@ -23,27 +34,22 @@ class BlocMap extends Disposable {
 
   void onFieldsQuery(String query) async {
     // _customers.search(query);
+    _mode.add(BtnsMode.none);
     print("query: $query");
 
-    // react to keyboard click
-
+    // mark fields as selected
     // search fields that match the input (contains)
     final matchedFields = await _db.queryFields(query: query);
-    // mark fields as selected
-    final polygons = _mapData.value.polygons ?? Set<Polygon>();
-    final newPolygons = _createPolygons(matchedFields, isSelected: true);
-    newPolygons.forEach((newPolygon) {
-      polygons.removeWhere((p) => p.polygonId == newPolygon.polygonId);
-      polygons.add(newPolygon);
-    });
-    // create bounds
-    final coordinates = matchedFields.expand(
-        (f) => f.coordinates.map((c) => LatLng(c.latitude, c.longitude))).toList();
-    final bounds = _createBounds(coordinates);
+    final matchedPolygons = _createPolygons(matchedFields, isSelected: true);
+    _updatePolygons(matchedPolygons);
 
-    _updateMapData(
-      polygons: polygons,
-    );
+    // create bounds
+    final coordinates = matchedFields
+        .expand(
+            (f) => f.coordinates.map((c) => LatLng(c.latitude, c.longitude)))
+        .toList();
+    final bounds = _createBounds(coordinates);
+    // update bounds
     _bounds.add(bounds);
   }
 
@@ -51,6 +57,8 @@ class BlocMap extends Disposable {
   void dispose() {
     _mapData.close();
     _bounds.close();
+    _area.close();
+    _mode.close();
   }
 
   Future _prepareData() async {
@@ -58,19 +66,11 @@ class BlocMap extends Disposable {
     final polygons = _createPolygons(fields);
     final fountains = await _db.queryFountains();
 
-    final newMarkers = <ModelMarker>[];
     final markers = _mapData.value.markers ?? Set<ModelMarker>();
-    newMarkers.addAll(_createFountainsMarkers(fountains));
-
-    newMarkers.forEach((newMarker) {
-      if (newMarker.latLng.latitude != 0 && newMarker.latLng.longitude != 0) {
-        markers.removeWhere((m) => m.id == newMarker.id);
-        markers.add(newMarker);
-      }
-    });
+    markers.addAll(_createFountainsMarkers(fountains));
 
     _updateMapData(
-      markers: markers,
+      // markers: markers,
       polygons: polygons,
     );
   }
@@ -92,10 +92,21 @@ class BlocMap extends Disposable {
           polygonId: PolygonId(field.id.toString()),
           fillColor: isSelected ? Colors.redAccent : Colors.lightGreen,
           strokeColor: isSelected ? Colors.red : Colors.green,
-          points: points);
+          points: points,
+          consumeTapEvents: true,
+          onTap: () {
+            final matchedPolygons = _createPolygons([field], isSelected: true);
+            _updatePolygons(matchedPolygons);
+          });
       polygons.add(polygon);
     });
     return polygons;
+  }
+
+  void _updatePolygons(Set<Polygon> newPolygons) {
+    final polygons = _mapData.value.polygons ?? Set<Polygon>();
+    polygons.addAll(newPolygons);
+    _updateMapData(polygons: polygons);
   }
 
   void setIsZoomed(bool isZoomed) {
@@ -127,6 +138,7 @@ class BlocMap extends Disposable {
         id: id ?? "markerId-$lat-$lng",
         title: f.name,
         latLng: LatLng(lat, lng),
+        hue: BitmapDescriptor.hueBlue,
         // color: f.name,
       );
     });
@@ -147,5 +159,104 @@ class BlocMap extends Disposable {
     return LatLngBounds(
         southwest: LatLng(southwestLat, southwestLon),
         northeast: LatLng(northeastLat, northeastLon));
+  }
+
+  // static ModelMarker createMarker(
+  //     {String title,
+  //       String snippet,
+  //       double lat,
+  //       double lng,
+  //       MarkerColors color,
+  //       String id,
+  //       Function onTap}) =>
+  //     ModelMarker(
+  //       id: id ?? "markerId-$lat-$lng",
+  //       latLng: LatLng(lat ?? 0, lng ?? 0),
+  //       title: title,
+  //       desc: snippet,
+  //       color: color,
+  //     );
+
+  void onMapTap(LatLng latLng) {
+    if (_mode.value != BtnsMode.measurement) return;
+    // https://pub.dev/packages/maps_toolkit
+    final markers = _mapData.value.markers ?? Set<ModelMarker>();
+    final pinMarkers = markers.where((m) {
+      return m.id.contains('pin');
+    }).toList();
+    final lat = latLng.latitude;
+    final lng = latLng.longitude;
+    final count = pinMarkers.length + 1;
+    final marker = ModelMarker(
+      id: "markerId-pin-$count-$lat-$lng",
+      latLng: LatLng(lat, lng),
+      hue: BitmapDescriptor.hueRed,
+      // color: f.name,
+    );
+    final path = (pinMarkers..add(marker)).map((p) => p.latLng).toList();
+    markers.addAll([marker]);
+    _updateMapData(
+      markers: markers,
+      polygons: _handleMeasurement(path),
+    );
+  }
+
+  Set<Polygon> _handleMeasurement(List<LatLng> path) {
+    final polygons = _mapData.value.polygons ?? Set<Polygon>();
+    if (path.length > 2) {
+      // TODO: optimization - pull the code from the library
+      // update _area
+      final area = mt.SphericalUtil.computeArea(
+          path.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
+      _area.add(area);
+
+      final polygon = Polygon(
+        strokeWidth: 1,
+        polygonId: PolygonId("measurement"),
+        fillColor: Colors.redAccent.withAlpha(160),
+        strokeColor: Colors.black,
+        points: path,
+      );
+      polygons.updateWhere(Set.of([polygon]), (o, n) => o.polygonId == n.polygonId);
+    } else {
+      _area.add(null);
+      polygons.removeWhere((p) => p.polygonId.value == "measurement");
+    }
+
+    return polygons;
+  }
+
+  void onBackBtnClick() {
+    final markers = _mapData.value.markers ?? Set<ModelMarker>();
+    final pinMarkers = markers.where((m) => m.id.contains('pin')).toSet();
+    final count = pinMarkers.length;
+    markers.removeWhere((m) => m.id.contains('pin-$count'));
+    pinMarkers.removeWhere((m) => m.id.contains('pin-$count'));
+    final path = pinMarkers.map((p) => p.latLng).toList();
+    _updateMapData(
+      markers: markers,
+      polygons: _handleMeasurement(path),
+    );
+  }
+
+  void onMeasurementClick() {
+    final newMode = _mode.value == BtnsMode.measurement
+        ? BtnsMode.none
+        : BtnsMode.measurement;
+    _mode.add(newMode);
+    if (newMode == BtnsMode.none) {
+      final markers = _mapData.value.markers ?? Set<ModelMarker>();
+      markers.removeWhere((m) => m.id.contains('pin'));
+      _updateMapData(
+        markers: markers,
+        polygons: _handleMeasurement([]),
+      );
+    }
+  }
+
+  void onSearchFieldClick() {
+    final newMode =
+        _mode.value == BtnsMode.search ? BtnsMode.none : BtnsMode.search;
+    _mode.add(newMode);
   }
 }

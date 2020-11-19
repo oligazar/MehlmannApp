@@ -41,7 +41,7 @@ class ModelMarker /*extends IconizedClusterable*/ {
 			latLng.latitude,
 			latLng.longitude,
 		),
-		icon: icon ?? BitmapDescriptor.defaultMarker,
+		icon: icon ?? hue != null ? BitmapDescriptor.defaultMarkerWithHue(hue) : BitmapDescriptor.defaultMarker,
 	);
 
 	// Widget toTrackerMarker() => TrackerMarker(
