@@ -28,7 +28,9 @@ class MLocalizations {
 
   String get currentPosition => "Aktuelle Position";
 
-  String get fountain => "Brunnen an/aus";
+  String get fountainOn => "Brunnen an";
+  
+  String get fountainOff => "Brunnen aus";
 
   String get promptSearch => "Suche";
 

@@ -2,25 +2,25 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
 
 class MapData {
-	Set<ModelMarker> markers;
+	Set<ModelMarker> fountains;
 	Set<Polygon> polygons;
-	bool isZoomed;
+	bool showFountains;
 	
 	MapData({
-		this.markers,
+		this.fountains,
 		this.polygons,
-		this.isZoomed,
+		this.showFountains = true,
 	});
 	
 	MapData copyWith({
 		Set<ModelMarker> markers,
 		Set<Polygon> polygons,
-		bool isZoomed
+		bool showFountains
 	}) {
 		return MapData(
-			markers: markers ?? this.markers,
+			fountains: markers ?? this.fountains,
 			polygons: polygons ?? this.polygons,
-			isZoomed: isZoomed ?? this.isZoomed,
+			showFountains: showFountains ?? this.showFountains,
 		);
 	}
 	

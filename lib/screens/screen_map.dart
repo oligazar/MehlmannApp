@@ -73,7 +73,7 @@ class ViewMapState extends State<ViewMap> {
 									zoomControlsEnabled: false,
 									mapType: MapType.normal,
 									polygons: mapData?.polygons,
-									markers: _buildMarkers(mapData?.markers),
+									markers: mapData?.showFountains != false ? _buildMarkers(mapData?.fountains) : null,
 									initialCameraPosition: _kGooglePlex,
 									onMapCreated: _onMapCreated,
 									onTap: bloc.onMapTap,
@@ -129,7 +129,37 @@ class ViewMapState extends State<ViewMap> {
 								),
 								Align(
 									alignment: Alignment.bottomCenter,
-									child: _buildBottomButtons(),
+									child: Padding(
+										padding: const EdgeInsets.only(bottom: 20),
+										child: Row(
+											mainAxisAlignment: MainAxisAlignment.center,
+											children: [
+												ButtonMahlmann(
+													onPressed: _goToCurrentPosition,
+													text: loc.currentPosition,
+												),
+												ButtonMahlmann(
+													onPressed: bloc.onFountainsBtnClicked,
+													text: mapData?.showFountains != false ? loc.fountainOff : loc.fountainOn,
+												),
+												StreamBuilder<double>(
+														stream: bloc.area,
+														builder: (context, snapshot) {
+															final area = snapshot.data;
+															return area != null
+																	? ButtonMahlmann(
+																onPressed: () {},
+																text: "${area.toStringAsFixed(2)} ha",
+															)
+																	: Container(height: 0);
+														}),
+												ButtonMahlmann(
+													onPressed: bloc.onBackBtnClick,
+													text: loc.back,
+												),
+											],
+										),
+									),
 								)
 							],
 						);
@@ -194,39 +224,5 @@ class ViewMapState extends State<ViewMap> {
 		})?.toSet() ??
 				Set<Marker>();
 		return markers;
-	}
-	
-	Widget _buildBottomButtons() {
-		return Padding(
-			padding: const EdgeInsets.only(bottom: 20),
-			child: Row(
-				mainAxisAlignment: MainAxisAlignment.center,
-				children: [
-					ButtonMahlmann(
-						onPressed: _goToCurrentPosition,
-						text: loc.currentPosition,
-					),
-					ButtonMahlmann(
-						onPressed: () {},
-						text: loc.fountain,
-					),
-					StreamBuilder<double>(
-							stream: bloc.area,
-							builder: (context, snapshot) {
-								final area = snapshot.data;
-								return area != null
-										? ButtonMahlmann(
-									onPressed: () {},
-									text: "${area.toStringAsFixed(2)} ha",
-								)
-										: Container(height: 0);
-							}),
-					ButtonMahlmann(
-						onPressed: bloc.onBackBtnClick,
-						text: loc.back,
-					),
-				],
-			),
-		);
 	}
 }
