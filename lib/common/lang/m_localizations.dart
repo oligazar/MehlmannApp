@@ -20,7 +20,11 @@ class MLocalizations {
   
   String get stopMeasurement => "Messung beenden";
   
-  String get searchField => "Search for fields";
+  String get selectSentence => "Satz auswählen";
+  
+  String get createSentence => "Satz erzeugen";
+  
+  String get searchField => "Felder suchen";
 
   String get setInbox => "Satz Inbox";
 
@@ -37,6 +41,28 @@ class MLocalizations {
   String get errorEmptyField => "Feld darf nicht leer sein";
 
   String get back => "Zurück";
+
+  String get btnOk => "Ok";
+
+  String get yes => "Ja";
+  
+  String get no => "Nein";
+
+  String get titleName => "Name";
+
+  String get titleStatus => "Status";
+
+  String get titleIsCabbage => "Kohlfähigkeit";
+
+  String get titleArea => "Fläche";
+
+  String get titleComments => "Comments";
+  
+  String get promptComment => "Comment";
+
+  String get titleRoute => "Route";
+
+  String get titleClose => "Schließen";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	
