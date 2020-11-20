@@ -9,6 +9,7 @@ class BtnsMode extends EnumClass {
 	static const BtnsMode none = _$none;
 	static const BtnsMode measurement = _$measurement;
 	static const BtnsMode search = _$search;
+	static const BtnsMode selectSentence = _$selectSentence;
 	
 	const BtnsMode._(String name): super(name);
 	

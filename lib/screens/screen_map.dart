@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/blocs/bloc_map.dart';
 import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
+import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
@@ -65,13 +66,7 @@ class ViewMapState extends State<ViewMap> {
     });
     _fieldInfoSubscription = bloc.fieldInfo.listen((field) {
       if (field != null) {
-        _showInfoDialog(
-          name: field.name,
-          status: field.status,
-          isCabbage: field.isCabbage,
-          area: field.areaSize,
-          comments: field.note,
-        );
+        _showInfoDialog(field);
       }
     });
     super.initState();
@@ -118,12 +113,8 @@ class ViewMapState extends State<ViewMap> {
                                         : loc.startMeasurement,
                                   ),
                                   ButtonMahlmann(
-                                    onPressed: () => _showInfoDialog(
-                                      name: "9100 - Gut Vehr vorm Hof",
-                                      status: "Bestellt",
-	                                    area: 17.1,
-                                    ),
-                                    text: mode == BtnsMode.measurement
+                                    onPressed: bloc.onSelectSentenceClick,
+                                    text: mode == BtnsMode.selectSentence
                                         ? loc.selectSentence
                                         : loc.createSentence,
                                   ),
@@ -273,13 +264,7 @@ class ViewMapState extends State<ViewMap> {
     return markers;
   }
 
-  void _showInfoDialog({
-    String name,
-    String status,
-    String isCabbage,
-    double area,
-    String comments,
-  }) {
+  void _showInfoDialog(Field field) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -292,17 +277,21 @@ class ViewMapState extends State<ViewMap> {
               child: DialogButton(
                 title: loc.titleRoute,
                 action: () {
-                  // TODO: open path on the map
+                  final c = field.coordinates.firstOrNull;
+                  if (c.latitude != null && c.longitude != null) {
+                    final urls = MapOpener.buildMapUrls(location: LatLng(c.latitude, c.longitude));
+                    MapOpener.openMap(urls);
+                  }
                   Navigator.of(context).pop();
                 },
               ),
             ),
-            InfoRow(loc.titleName, name),
-            InfoRow(loc.titleStatus, status),
-            InfoRow(loc.titleIsCabbage, isCabbage),
+            InfoRow(loc.titleName, field.name),
+            InfoRow(loc.titleStatus, field.status),
+            InfoRow(loc.titleIsCabbage, field.isCabbage),
             InfoRow(loc.titleArea,
-                area != null ? "${area.toStringAsFixed(2)} ha" : null),
-            InfoRow(loc.titleComments, comments),
+                field.areaSize != null ? "${field.areaSize.toStringAsFixed(2)} ha" : null),
+            InfoRow(loc.titleComments, field.note),
             const SizedBox(height: 8),
 	          TextField(
 		          decoration: InputDecoration(

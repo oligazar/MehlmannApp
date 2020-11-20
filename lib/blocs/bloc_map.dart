@@ -93,6 +93,13 @@ class BlocMap extends Disposable {
     }
   }
 
+  void onSelectSentenceClick() {
+    final newMode = _mode.value == BtnsMode.selectSentence
+        ? BtnsMode.none
+        : BtnsMode.selectSentence;
+    _mode.add(newMode);
+  }
+
   void onSearchFieldClick() {
     final newMode =
         _mode.value == BtnsMode.search ? BtnsMode.none : BtnsMode.search;
@@ -178,23 +185,23 @@ class BlocMap extends Disposable {
     });
   }
 
-  LatLngBounds _createBounds(List<LatLng> positions) {
-    if (positions?.isEmpty == true) return null;
-    final southwestLat = positions.map((p) => p.latitude).reduce(
+  LatLngBounds _createBounds(List<LatLng> points) {
+    if (points?.isEmpty == true) return null;
+    final southwestLat = points.map((p) => p.latitude).reduce(
         (value, element) => value < element ? value : element); // smallest
-    final southwestLon = positions
+    final southwestLon = points
         .map((p) => p.longitude)
         .reduce((value, element) => value < element ? value : element);
-    final northeastLat = positions.map((p) => p.latitude).reduce(
+    final northeastLat = points.map((p) => p.latitude).reduce(
         (value, element) => value > element ? value : element); // biggest
-    final northeastLon = positions
+    final northeastLon = points
         .map((p) => p.longitude)
         .reduce((value, element) => value > element ? value : element);
     return LatLngBounds(
         southwest: LatLng(southwestLat, southwestLon),
         northeast: LatLng(northeastLat, northeastLon));
   }
-
+  
   Future _prepareData() async {
     final fields = await _db.queryFields();
     final polygons = _createPolygons(fields);
@@ -254,5 +261,4 @@ class BlocMap extends Disposable {
 	  // update bounds
 	  _bounds.add(bounds);
   }
-
 }
