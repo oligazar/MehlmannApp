@@ -48,21 +48,27 @@ class MLocalizations {
   
   String get no => "Nein";
 
-  String get titleName => "Name";
+  String get name => "Name";
 
-  String get titleStatus => "Status";
+  String get status => "Status";
 
-  String get titleIsCabbage => "Kohlfähigkeit";
+  String get cabbage => "Kohlfähigkeit";
 
   String get titleArea => "Fläche";
 
-  String get titleComments => "Comments";
+  String get comments => "Comments";
   
-  String get promptComment => "Comment";
+  String get comment => "Comment";
 
-  String get titleRoute => "Route";
+  String get route => "Route";
 
-  String get titleClose => "Schließen";
+  String get close => "Schließen";
+
+  String get sendSentence => "Satz versenden";
+
+  String get abort => "Abbrechen";
+
+  String get msgSuccess => "Der Satz wurde erfolgreich erstellt.";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

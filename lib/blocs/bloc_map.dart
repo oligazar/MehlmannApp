@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mahlmann_app/common/api/api_client.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
-import 'package:mahlmann_app/common/sqlite/sqlite_client.dart';
+import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
+import 'package:mahlmann_app/models/built_value/comment.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
@@ -12,12 +14,19 @@ import 'package:maps_toolkit/maps_toolkit.dart' as mt;
 import 'package:rxdart/rxdart.dart' as rx;
 
 class BlocMap extends Disposable {
-  final _db = SqliteClient();
+  final _db = DbClient();
+  final _api = ApiClient();
   final _mapData = rx.BehaviorSubject<MapData>.seeded(MapData());
   final _bounds = rx.BehaviorSubject<LatLngBounds>();
   final _area = rx.BehaviorSubject<double>();
   final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
   final _fieldInfo = rx.BehaviorSubject<Field>();
+  final _fieldComments = rx.BehaviorSubject<List<Comment>>();
+
+  final _fields = Set<Field>(); // orange
+  final _searchedFields = Set<Field>(); // orange
+  final _inboxFields = Set<Field>(); // purple
+  final _fieldsGroup = Set<Field>(); // red
 
   Stream<MapData> get mapData => _mapData.stream;
 
@@ -26,10 +35,12 @@ class BlocMap extends Disposable {
   Stream<double> get area => _area.stream;
 
   Stream<BtnsMode> get mode => _mode.stream;
+
+  Stream<List<Comment>> get fieldComments => _fieldComments.stream;
   
   Stream<Field> get fieldInfo => _fieldInfo.stream;
 
-  // BtnsMode get currentMode => _mode.value;
+  BtnsMode get currentMode => _mode.value;
 
   BlocMap() {
     _prepareData();
@@ -42,20 +53,20 @@ class BlocMap extends Disposable {
     _area.close();
     _mode.close();
     _fieldInfo.close();
+    _fieldComments.close();
   }
 
   void onFieldsQuery(String query) async {
-    // _customers.search(query);
     _mode.add(BtnsMode.none);
     print("query: $query");
 
-    // mark fields as selected
-    // search fields that match the input (contains)
-    final matchedFields = await _db.queryFields(query: query);
-    final matchedPolygons = _createPolygons(matchedFields, isSelected: true);
-    _updatePolygons(matchedPolygons);
+    final searchedFields = await _db.queryFields(query: query);
+    _searchedFields.addAll(searchedFields ?? []);
 
-    _updateBounds(matchedFields);
+    final polygons = _createPolygons(_fields);
+    _updateMapData(polygons: polygons);
+
+    _updateBounds(searchedFields);
   }
 
   // Click handlers
@@ -94,10 +105,16 @@ class BlocMap extends Disposable {
   }
 
   void onSelectSentenceClick() {
-    final newMode = _mode.value == BtnsMode.selectSentence
-        ? BtnsMode.none
-        : BtnsMode.selectSentence;
+    final newMode = _mode.value == BtnsMode.createSentence
+        ? BtnsMode.selectSentence
+        : BtnsMode.createSentence;
     _mode.add(newMode);
+  }
+
+  Future onSendSentence(String sentenceName) async {
+    final fieldIds = _fieldsGroup.map((fg) => fg.id).toList();
+    await _api.setFields(sentenceName, fieldIds);
+    _fieldsGroup.clear();
   }
 
   void onSearchFieldClick() {
@@ -118,6 +135,14 @@ class BlocMap extends Disposable {
       pins: pins,
       polygons: _handleMeasurement(path),
     );
+  }
+
+  void onSubmitComment(int fieldId, String text) async {
+    final comment = await _api.createComment(fieldId, text);
+    if (comment != null) {
+      final comments = _fieldComments.value ?? [];
+      _fieldComments.value = comments..add(comment);
+    }
   }
 
   // private functions
@@ -201,10 +226,11 @@ class BlocMap extends Disposable {
         southwest: LatLng(southwestLat, southwestLon),
         northeast: LatLng(northeastLat, northeastLon));
   }
-  
+
   Future _prepareData() async {
     final fields = await _db.queryFields();
-    final polygons = _createPolygons(fields);
+    _fields.addAll(fields ?? []);
+    final polygons = _createPolygons(_fields);
     final fountains = await _db.queryFountains();
 
     final markers = _mapData.value.fountains ?? Set<ModelMarker>();
@@ -214,13 +240,10 @@ class BlocMap extends Disposable {
       fountains: markers,
       polygons: polygons,
     );
-    _updateBounds(fields);
+    _updateBounds(_fields);
   }
 
-  Set<Polygon> _createPolygons(
-    List<Field> fields, {
-    isSelected = false,
-  }) {
+  Set<Polygon> _createPolygons(Iterable<Field> fields) {
     final polygons = Set<Polygon>();
     fields.forEach((field) {
       final points = <LatLng>[];
@@ -229,36 +252,72 @@ class BlocMap extends Disposable {
           points.add(LatLng(c.latitude, c.longitude));
         }
       });
+      final color = _getColorFor(field);
       final polygon = Polygon(
-          strokeWidth: 2,
-          polygonId: PolygonId(field.id.toString()),
-          fillColor: isSelected ? Colors.orangeAccent : Colors.lightGreen,
-          strokeColor: isSelected ? Colors.orange : Colors.green,
-          points: points,
-          consumeTapEvents: true,
-          onTap: () {
-            final matchedPolygons = _createPolygons([field], isSelected: true);
-            _updatePolygons(matchedPolygons);
-            _fieldInfo.add(field);
-          });
+        strokeWidth: 2,
+        polygonId: PolygonId(field.id.toString()),
+        fillColor: color,
+        strokeColor: color.withAlpha(200),
+        points: points,
+        consumeTapEvents: true,
+        onTap: () => _onFieldClick(field),
+      );
       polygons.add(polygon);
     });
     return polygons;
   }
 
-  void _updatePolygons(Set<Polygon> newPolygons) {
-    final polygons = _mapData.value.polygons ?? Set<Polygon>();
-    polygons.addAll(newPolygons);
-    _updateMapData(polygons: polygons);
+  void _updateBounds(Iterable<Field> fields) {
+    final coordinates = fields
+        .expand(
+            (f) => f.coordinates.map((c) => LatLng(c.latitude, c.longitude)))
+        .toList();
+    final bounds = _createBounds(coordinates);
+    // update bounds
+    _bounds.add(bounds);
   }
 
-  void _updateBounds(List<Field> fields) {
-	  final coordinates = fields
-			  .expand(
-					  (f) => f.coordinates.map((c) => LatLng(c.latitude, c.longitude)))
-			  .toList();
-	  final bounds = _createBounds(coordinates);
-	  // update bounds
-	  _bounds.add(bounds);
+  // onPolygonPress
+  Future _onFieldClick(Field field) async {
+    if (currentMode != BtnsMode.measurement) {
+      _fieldComments.value = [];
+
+      void _updateFields() {
+	      final polygons = _createPolygons(_fields);
+	      _updateMapData(polygons: polygons);
+      }
+      
+      if (currentMode != BtnsMode.createSentence) {
+        _fieldInfo.add(field);
+        _updateFields();
+        //       		selectedRegion: field,
+        //           showFieldWindow: true,
+        //           showSetWindow: false,
+        //           showSearchWindow: false,
+        //           showInboxWindow: false,
+
+        final comments = await _api.fetchComments(field.id);
+        _fieldComments.value = comments;
+      } else {
+      	// grouping == true
+        _fieldsGroup.add(field);
+        _updateFields();
+      }
+    }
+  }
+
+  Color _getColorFor(field) {
+    Color color = Colors.green;
+    if (_searchedFields.contains(field)) {
+      color = Colors.orange;
+    }
+    if (_inboxFields.contains(field)) {
+      color = Colors.purple;
+    }
+    if (_fieldInfo.value == field || _fieldsGroup.contains(field)) {
+      color = Colors.red;
+    }
+
+    return color;
   }
 }

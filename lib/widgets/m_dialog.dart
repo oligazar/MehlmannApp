@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 
-class MahlmannDialog extends StatelessWidget {
+class MDialog extends StatelessWidget {
   final String title;
   final String message;
   final String btnTitle;
@@ -10,7 +10,7 @@ class MahlmannDialog extends StatelessWidget {
   final Widget child;
   final _padding = 10.0;
 
-  MahlmannDialog({
+  MDialog({
     this.title,
     this.message,
     this.action,

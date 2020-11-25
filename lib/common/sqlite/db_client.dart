@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-class SqliteClient {
+class DbClient {
   Future<Database> get database async {
     if (_db != null) return _db;
     _db = await _initDb();
@@ -107,6 +107,16 @@ class SqliteClient {
     print("maps: $maps");
     return maps.map((m) => converter(m)).toList();
   }
+  
+  
+  Future clearAllTables() async {
+    Database db = await database;
+    _tablesToDelete.forEach((table) {
+      db
+          .delete(table, where: "1")
+          .then((rows) => print("$rows deleted from $table"));
+    });
+  }
 
   // database initialization
 
@@ -126,11 +136,11 @@ class SqliteClient {
     TABLE_FIELDS
   ];
 
-  SqliteClient._internal();
+  DbClient._internal();
 
-  static final SqliteClient _instance = SqliteClient._internal();
+  static final DbClient _instance = DbClient._internal();
 
-  factory SqliteClient() => _instance;
+  factory DbClient() => _instance;
 
   static Database _db;
 

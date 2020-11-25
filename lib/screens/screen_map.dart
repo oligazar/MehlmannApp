@@ -2,17 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_map.dart';
 import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
-import 'package:mahlmann_app/common/map_opener.dart';
+import 'package:mahlmann_app/common/prefs.dart';
+import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
-import 'package:mahlmann_app/widgets/button_mahlmann.dart';
-import 'package:mahlmann_app/widgets/mahlmann_dialog.dart';
+import 'package:mahlmann_app/widgets/m_button.dart';
+import 'package:mahlmann_app/widgets/field_info_dialog.dart';
 import 'package:mahlmann_app/widgets/search_box.dart';
+import 'package:mahlmann_app/widgets/select_sentence_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 
@@ -64,9 +67,16 @@ class ViewMapState extends State<ViewMap> {
         .then((bitmap) {
       iconDrop = bitmap;
     });
-    _fieldInfoSubscription = bloc.fieldInfo.listen((field) {
+    _fieldInfoSubscription = bloc.fieldInfo.listen((field) async {
       if (field != null) {
-        _showInfoDialog(field);
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => Provider.value(
+            value: bloc,
+            builder: (context, _) => FieldInfoDialog(field),
+          ),
+        );
       }
     });
     super.initState();
@@ -106,28 +116,29 @@ class ViewMapState extends State<ViewMap> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  ButtonMahlmann(
+                                  MButton(
                                     onPressed: bloc.onMeasurementClick,
                                     text: mode == BtnsMode.measurement
                                         ? loc.stopMeasurement
                                         : loc.startMeasurement,
                                   ),
-                                  ButtonMahlmann(
-                                    onPressed: bloc.onSelectSentenceClick,
-                                    text: mode == BtnsMode.selectSentence
-                                        ? loc.selectSentence
-                                        : loc.createSentence,
+                                  // TODO: selectedRegion && admin
+                                  MButton(
+                                    onPressed: _onSentenceBtnClick,
+                                    text: mode == BtnsMode.createSentence
+                                        ? loc.createSentence
+                                        : loc.selectSentence,
                                   ),
-                                  ButtonMahlmann(
+                                  MButton(
                                     onPressed: bloc.onSearchFieldClick,
                                     text: loc.searchField,
                                   ),
-                                  ButtonMahlmann(
+                                  MButton(
                                     onPressed: () {},
                                     text: loc.setInbox,
                                   ),
-                                  ButtonMahlmann(
-                                    onPressed: () {},
+                                  MButton(
+                                    onPressed: _logOut,
                                     text: loc.logOut,
                                   ),
                                 ],
@@ -155,11 +166,11 @@ class ViewMapState extends State<ViewMap> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ButtonMahlmann(
+                        MButton(
                           onPressed: _goToCurrentPosition,
                           text: loc.currentPosition,
                         ),
-                        ButtonMahlmann(
+                        MButton(
                           onPressed: bloc.onFountainsBtnClicked,
                           text: mapData?.showFountains != false
                               ? loc.fountainOff
@@ -170,14 +181,14 @@ class ViewMapState extends State<ViewMap> {
                             builder: (context, snapshot) {
                               final area = snapshot.data;
                               return area != null
-                                  ? ButtonMahlmann(
+                                  ? MButton(
                                       onPressed: () {},
                                       text: "${area.toStringAsFixed(2)} ha",
                                     )
                                   : Container(height: 0);
                             }),
                         mapData?.pins?.isNotEmpty == true
-                            ? ButtonMahlmann(
+                            ? MButton(
                                 onPressed: bloc.onBackBtnClick,
                                 text: loc.back,
                               )
@@ -264,77 +275,28 @@ class ViewMapState extends State<ViewMap> {
     return markers;
   }
 
-  void _showInfoDialog(Field field) {
-    showDialog(
+  Future _logOut() async {
+    await DbClient().clearAllTables();
+    Prefs.logout();
+    AppMahlmann.of(context).setIsAuthorized(false);
+  }
+
+  void _onSentenceBtnClick() async {
+    // if (bloc.currentMode == BtnsMode.selectSentence) {
+    // TODO: check what modes should exchange here
+    bloc.onSelectSentenceClick();
+    final sentenceName = await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => MahlmannDialog(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Align(
-              alignment: Alignment.center,
-              child: DialogButton(
-                title: loc.titleRoute,
-                action: () {
-                  final c = field.coordinates.firstOrNull;
-                  if (c.latitude != null && c.longitude != null) {
-                    final urls = MapOpener.buildMapUrls(location: LatLng(c.latitude, c.longitude));
-                    MapOpener.openMap(urls);
-                  }
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-            InfoRow(loc.titleName, field.name),
-            InfoRow(loc.titleStatus, field.status),
-            InfoRow(loc.titleIsCabbage, field.isCabbage),
-            InfoRow(loc.titleArea,
-                field.areaSize != null ? "${field.areaSize.toStringAsFixed(2)} ha" : null),
-            InfoRow(loc.titleComments, field.note),
-            const SizedBox(height: 8),
-	          TextField(
-		          decoration: InputDecoration(
-                contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-			          border: OutlineInputBorder(),
-			          hintText: loc.promptComment,
-                hintStyle: const TextStyle(
-                  color: Colors.black54,
-                  fontSize: 15,
-                ),
-                isCollapsed: true,
-		          ),
-	          )
-          ],
-        ),
-        btnTitle: loc.titleClose,
+      builder: (BuildContext context) => SelectSentenceDialog(
+        title: loc.sendSentence,
       ),
     );
-  }
-}
-
-class InfoRow extends StatelessWidget {
-  final String name;
-  final String value;
-
-  const InfoRow(
-    this.name,
-    this.value, {
-    Key key,
-  })  : assert(name != null, "Name shouldn't be null"),
-        super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text("$name: ",
-            style: const TextStyle(
-              color: Colors.black54,
-              fontSize: 15,
-            )),
-        Text(value ?? "n/a", style: TextStyle(fontSize: 15)),
-      ],
-    );
+    // shouldn't be there _fieldsGroup check first?
+    if (sentenceName != null) {
+      await bloc.onSendSentence(sentenceName);
+      context.showSnackBar(Text(loc.msgSuccess));
+    }
+    // }
   }
 }

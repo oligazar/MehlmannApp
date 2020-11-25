@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mahlmann_app/blocs/bloc_preloader.dart';
-import 'package:mahlmann_app/widgets/mahlmann_progress_indicator.dart';
+import 'package:mahlmann_app/widgets/m_progress_indicator.dart';
 import 'package:provider/provider.dart';
 
 
@@ -46,7 +46,7 @@ class _ViewPreloaderState extends State<ViewPreloader> {
 				    ),
 			    ),
 			    Positioned(
-				    child: MahlmannProgressIndicator(),
+				    child: MProgressIndicator(),
 				    left: 0,
 				    right: 0,
 				    bottom: 0,

@@ -1,10 +1,10 @@
 import 'package:mahlmann_app/common/api/api_client.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
-import 'package:mahlmann_app/common/sqlite/sqlite_client.dart';
+import 'package:mahlmann_app/common/sqlite/db_client.dart';
 
 class BlocPreloader extends Disposable {
 	final _api = ApiClient();
-	final _db = SqliteClient();
+	final _db = DbClient();
 	final Function _onFetched;
 	
   BlocPreloader(this._onFetched) {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class ButtonMahlmann extends StatelessWidget {
+class MButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
 
-  const ButtonMahlmann({
+  const MButton({
     Key key,
     this.text,
     this.onPressed,
