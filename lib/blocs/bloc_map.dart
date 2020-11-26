@@ -44,6 +44,8 @@ class BlocMap extends Disposable {
   Stream<List<Group>> get inboxGroups => _inboxGroups.stream;
   
   Stream<Field> get fieldInfo => _fieldInfo.stream;
+  
+  bool get hasFieldInfo => _fieldInfo.hasValue;
 
   BtnsMode get currentMode => _mode.value;
 
@@ -127,6 +129,9 @@ class BlocMap extends Disposable {
     final fieldIds = _fieldsGroup.map((fg) => fg.id).toList();
     await _api.setFields(sentenceName, fieldIds);
     _fieldsGroup.clear();
+    _updateMapData(
+      polygons: _createPolygons(_fields),
+    );
   }
 
   void onSearchFieldClick() {

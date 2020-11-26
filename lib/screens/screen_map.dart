@@ -127,13 +127,21 @@ class ViewMapState extends State<ViewMap> {
                                         ? loc.stopMeasurement
                                         : loc.startMeasurement,
                                   ),
-                                  // TODO: selectedRegion && admin
-                                  MButton(
-                                    onPressed: _onSentenceBtnClick,
-                                    text: mode == BtnsMode.createSentence
-                                        ? loc.createSentence
-                                        : loc.selectSentence,
-                                  ),
+                                  FutureBuilder<bool>(
+                                      future: Prefs.getLoginResponse()
+                                          .then((r) => r.admin),
+                                      builder: (context, snapshot) {
+                                        final isAdmin = snapshot.data == true;
+                                        return isAdmin && bloc.hasFieldInfo
+                                            ? MButton(
+                                                onPressed: _onSentenceBtnClick,
+                                                text: mode ==
+                                                        BtnsMode.createSentence
+                                                    ? loc.createSentence
+                                                    : loc.selectSentence,
+                                              )
+                                            : Container();
+                                      }),
                                   MButton(
                                     onPressed: bloc.onSearchFieldClick,
                                     text: loc.searchField,
@@ -231,8 +239,7 @@ class ViewMapState extends State<ViewMap> {
     final location = await currentLocation;
     if (location != null) {
       final GoogleMapController controller = await _controller.future;
-      controller
-          .animateCamera(CameraUpdate.newLatLngZoom(location, 12.8));
+      controller.animateCamera(CameraUpdate.newLatLngZoom(location, 12.8));
       // controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
       bloc.markCurrentPosition(location);
     }
@@ -292,22 +299,23 @@ class ViewMapState extends State<ViewMap> {
   }
 
   void _onSentenceBtnClick() async {
-    // if (bloc.currentMode == BtnsMode.selectSentence) {
-    // TODO: check what modes should exchange here
-    bloc.onSelectSentenceClick();
-    final sentenceName = await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) => SelectSentenceDialog(
-        title: loc.sendSentence,
-      ),
-    );
-    // shouldn't be there _fieldsGroup check first?
-    if (sentenceName != null) {
-      await bloc.onSendSentence(sentenceName);
-      context.showSnackBar(Text(loc.msgSuccess));
+    if (bloc.currentMode == BtnsMode.createSentence) {
+      bloc.onSelectSentenceClick();
+      final sentenceName = await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => SelectSentenceDialog(
+          title: loc.sendSentence,
+        ),
+      );
+      // shouldn't be there _fieldsGroup check first?
+      if (sentenceName != null) {
+        await bloc.onSendSentence(sentenceName);
+        context.showSnackBar(Text(loc.msgSuccess));
+      }
+    } else {
+      bloc.onSelectSentenceClick();
     }
-    // }
   }
 
   void _onSentenceInboxClick() {
