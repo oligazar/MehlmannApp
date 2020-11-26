@@ -5,6 +5,7 @@ import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fields_response.dart';
+import 'package:mahlmann_app/models/built_value/group.dart';
 import 'package:mahlmann_app/models/login_response.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 
@@ -79,18 +80,15 @@ class ApiClient extends ApiBase {
     }
   }
 
-  Future<List<dynamic>> fetchGroups(int fieldId) async {
+  Future<List<Group>> fetchGroups() async {
     print('fetchGroups');
     final url = buildUri("/api/v1/groups");
 
     final response =
         await client.getUri(url, options: Options(headers: await headers));
 
-    // som kind of parsing
-    final comments = List<Comment>.from(
-        response.data.map((f) => Comment.fromMap(f)).toList());
-
-    return comments;
+    return List<Group>.from(
+        response.data["groups"]?.map((f) => Group.fromMap(f))?.toList() ?? []);
   }
 
 // export const loginGet = (uid, client, token, expiry) => {

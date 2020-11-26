@@ -55,6 +55,13 @@ class DbClient {
         shouldClearTable: shouldClearTable);
   }
 
+  Future<List<Field>> queryFieldsIn(
+      {String query = "", List<int> ids}) async {
+    return queryListIn(TABLE_FIELDS, Field.queryColumns,
+            (m) => Field.fromDb(m),
+        queryCol: COL_NAME, query: query, argsCol: COL_ID, args: ids);
+  }
+
   Future<List<Field>> queryFields({
     String query = "",
     int id,

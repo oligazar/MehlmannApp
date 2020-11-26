@@ -5,7 +5,7 @@ import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/widgets/m_text_field.dart';
-import 'package:mahlmann_app/widgets/m_dialog.dart';
+import 'package:mahlmann_app/widgets/dialogs/m_dialog.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 
 class FieldInfoDialog extends StatefulWidget {

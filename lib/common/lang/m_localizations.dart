@@ -26,7 +26,7 @@ class MLocalizations {
   
   String get searchField => "Felder suchen";
 
-  String get setInbox => "Satz Inbox";
+  String get sentenceInbox => "Satz Inbox";
 
   String get logOut => "Ausloggen";
 
@@ -69,6 +69,8 @@ class MLocalizations {
   String get abort => "Abbrechen";
 
   String get msgSuccess => "Der Satz wurde erfolgreich erstellt.";
+
+  String get noSets => "No sets.";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

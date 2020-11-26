@@ -8,13 +8,16 @@ import 'package:package_info/package_info.dart';
 Future<LatLng> get currentLocation async {
 	LatLng currentLocation;
 	try {
-		print("currentLocation, beforeTime: $millis");
-		final position = await Geolocator().getLastKnownPosition().timeout(const Duration(seconds: 3)) ??
-				await Geolocator().getCurrentPosition().timeout(const Duration(seconds: 3));
-		
-		currentLocation = LatLng(position.latitude, position.longitude);
-		
-		print("currentLocation, afterTime: $millis, currentLocation: $currentLocation");
+		final status = await Geolocator().checkGeolocationPermissionStatus();
+		if (status == GeolocationStatus.granted) {
+			print("currentLocation, beforeTime: $millis");
+			final position = await Geolocator().getLastKnownPosition().timeout(const Duration(seconds: 3)) ??
+					await Geolocator().getCurrentPosition().timeout(const Duration(seconds: 3));
+			
+			currentLocation = LatLng(position.latitude, position.longitude);
+			
+			print("currentLocation, afterTime: $millis, currentLocation: $currentLocation");
+		}
 	} on PlatformException catch (e) {
 		print("functions, currentLocation, exception: $e");
 		if (e.code == 'PERMISSION_DENIED') {

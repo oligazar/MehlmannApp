@@ -41,5 +41,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Mahlmann app requires user’s location for showing your own position.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Mahlmann app requires user’s location for showing your own position.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Mahlmann app requires user’s location for showing your own position.</string>
 </dict>
 </plist>

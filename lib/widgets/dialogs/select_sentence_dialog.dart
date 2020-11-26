@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mahlmann_app/widgets/m_dialog.dart';
+import 'package:mahlmann_app/widgets/dialogs/m_dialog.dart';
 import 'package:mahlmann_app/widgets/m_text_field.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:mahlmann_app/common/field_validator.dart';

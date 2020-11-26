@@ -5,6 +5,7 @@ import 'package:mahlmann_app/models/built_value/coordinate.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fields_response.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
+import 'package:mahlmann_app/models/built_value/group.dart';
 import 'package:mahlmann_app/models/built_value/user.dart';
 import 'package:built_collection/built_collection.dart';
 
@@ -16,7 +17,8 @@ part 'serializers.g.dart';
 	User,
 	Fountain,
 	FieldsResponse,
-	Comment
+	Comment,
+	Group
 ])
 final Serializers serializers =
       (_$serializers.toBuilder()..addPlugin(StandardJsonPlugin())).build();

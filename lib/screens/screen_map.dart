@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -12,10 +13,11 @@ import 'package:mahlmann_app/models/built_value/btns_mode.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
+import 'package:mahlmann_app/widgets/dialogs/sentence_inbox_dialog.dart';
 import 'package:mahlmann_app/widgets/m_button.dart';
-import 'package:mahlmann_app/widgets/field_info_dialog.dart';
+import 'package:mahlmann_app/widgets/dialogs/field_info_dialog.dart';
 import 'package:mahlmann_app/widgets/search_box.dart';
-import 'package:mahlmann_app/widgets/select_sentence_dialog.dart';
+import 'package:mahlmann_app/widgets/dialogs/select_sentence_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 
@@ -63,8 +65,12 @@ class ViewMapState extends State<ViewMap> {
   @override
   void initState() {
     BitmapDescriptor.fromAssetImage(
-            ImageConfiguration(devicePixelRatio: 2.5), 'assets/images/drop.png')
-        .then((bitmap) {
+      ImageConfiguration(
+        // devicePixelRatio: 5,
+        size: Size(12, 12),
+      ),
+      Platform.isIOS ? 'assets/images/drop_ios.png' : 'assets/images/drop.png',
+    ).then((bitmap) {
       iconDrop = bitmap;
     });
     _fieldInfoSubscription = bloc.fieldInfo.listen((field) async {
@@ -95,8 +101,7 @@ class ViewMapState extends State<ViewMap> {
                   zoomControlsEnabled: false,
                   mapType: MapType.normal,
                   polygons: mapData?.polygons,
-                  markers: _buildAllMarkers(mapData?.fountains, mapData?.pins,
-                      mapData?.showFountains),
+                  markers: _buildAllMarkers(mapData),
                   initialCameraPosition: _kGooglePlex,
                   onMapCreated: _onMapCreated,
                   onTap: bloc.onMapTap,
@@ -134,8 +139,8 @@ class ViewMapState extends State<ViewMap> {
                                     text: loc.searchField,
                                   ),
                                   MButton(
-                                    onPressed: () {},
-                                    text: loc.setInbox,
+                                    onPressed: _onSentenceInboxClick,
+                                    text: loc.sentenceInbox,
                                   ),
                                   MButton(
                                     onPressed: _logOut,
@@ -223,10 +228,14 @@ class ViewMapState extends State<ViewMap> {
 
   Future<void> _goToCurrentPosition() async {
     // TODO: handle permissions before trying this !!!
-    final GoogleMapController controller = await _controller.future;
-    controller
-        .animateCamera(CameraUpdate.newLatLngZoom(await currentLocation, 12.8));
-    // controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
+    final location = await currentLocation;
+    if (location != null) {
+      final GoogleMapController controller = await _controller.future;
+      controller
+          .animateCamera(CameraUpdate.newLatLngZoom(location, 12.8));
+      // controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
+      bloc.markCurrentPosition(location);
+    }
   }
 
   Future _zoomFitBounds(LatLngBounds bounds) async {
@@ -235,13 +244,14 @@ class ViewMapState extends State<ViewMap> {
     });
   }
 
-  Set<Marker> _buildAllMarkers(Iterable<ModelMarker> fountains,
-      Iterable<ModelMarker> pins, bool showFountains) {
+  Set<Marker> _buildAllMarkers(MapData data) {
     final markers = Set<Marker>();
-    if (showFountains != false && fountains?.isNotEmpty == true)
-      markers.addAll(_buildMarkers(fountains));
-    if (pins?.isNotEmpty == true)
-      markers.addAll(_buildMarkers(pins, isFountain: false));
+    if (data?.showFountains != false && data?.fountains?.isNotEmpty == true)
+      markers.addAll(_buildMarkers(data.fountains));
+    if (data?.pins?.isNotEmpty == true)
+      markers.addAll(_buildMarkers(data.pins, isFountain: false));
+    if (data?.currentPosition != null)
+      markers.addAll(_buildMarkers([data.currentPosition], isFountain: false));
     return markers;
   }
 
@@ -298,5 +308,17 @@ class ViewMapState extends State<ViewMap> {
       context.showSnackBar(Text(loc.msgSuccess));
     }
     // }
+  }
+
+  void _onSentenceInboxClick() {
+    bloc.onSentenceInboxClick();
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Provider.value(
+        value: bloc,
+        builder: (context, _) => SentenceInboxDialog(),
+      ),
+    );
   }
 }

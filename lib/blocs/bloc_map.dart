@@ -1,3 +1,4 @@
+import 'package:built_collection/src/list.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/api/api_client.dart';
@@ -7,6 +8,7 @@ import 'package:mahlmann_app/models/built_value/btns_mode.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
+import 'package:mahlmann_app/models/built_value/group.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
 import 'package:mahlmann_app/common/extensions.dart';
@@ -22,11 +24,12 @@ class BlocMap extends Disposable {
   final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
   final _fieldInfo = rx.BehaviorSubject<Field>();
   final _fieldComments = rx.BehaviorSubject<List<Comment>>();
+  final _inboxGroups = rx.BehaviorSubject<List<Group>>(); // purple
 
   final _fields = Set<Field>(); // orange
   final _searchedFields = Set<Field>(); // orange
-  final _inboxFields = Set<Field>(); // purple
   final _fieldsGroup = Set<Field>(); // red
+  final _inboxFields = Set<Field>(); // red
 
   Stream<MapData> get mapData => _mapData.stream;
 
@@ -37,6 +40,8 @@ class BlocMap extends Disposable {
   Stream<BtnsMode> get mode => _mode.stream;
 
   Stream<List<Comment>> get fieldComments => _fieldComments.stream;
+  
+  Stream<List<Group>> get inboxGroups => _inboxGroups.stream;
   
   Stream<Field> get fieldInfo => _fieldInfo.stream;
 
@@ -54,6 +59,7 @@ class BlocMap extends Disposable {
     _mode.close();
     _fieldInfo.close();
     _fieldComments.close();
+    _inboxGroups.close();
   }
 
   void onFieldsQuery(String query) async {
@@ -145,6 +151,34 @@ class BlocMap extends Disposable {
     }
   }
 
+  void onSentenceInboxClick() async {
+    final groups = await _api.fetchGroups();
+    _inboxGroups.value = groups;
+  }
+
+  void handleSentence(BuiltList<int> fieldIds) async {
+    final db = DbClient();
+    _inboxFields.clear();
+    _inboxFields.addAll(await db.queryFieldsIn(ids: fieldIds.toList()) ?? []);
+    
+    final polygons = _createPolygons(_fields);
+    _updateMapData(polygons: polygons);
+
+    _updateBounds(_inboxFields);
+  }
+
+  void markCurrentPosition(LatLng latLng) {
+    final marker = ModelMarker(
+      id: "markerId-currentPosition",
+      latLng: latLng,
+      hue: BitmapDescriptor.hueRed,
+      // color: f.name,
+    );
+    _updateMapData(
+      currentPosition: marker,
+    );
+  }
+
   // private functions
 
   Set<Polygon> _handleMeasurement(List<LatLng> path) {
@@ -178,6 +212,7 @@ class BlocMap extends Disposable {
     Set<ModelMarker> pins,
     Set<Polygon> polygons,
     bool showFountains,
+    ModelMarker currentPosition,
   }) {
     final MapData mapData = _mapData.value;
     _mapData.value = mapData != null
@@ -186,11 +221,15 @@ class BlocMap extends Disposable {
             pins: pins ?? mapData.pins,
             polygons: polygons ?? mapData.polygons,
             showFountains: showFountains ?? mapData.showFountains,
+            currentPosition: currentPosition ?? mapData.currentPosition,
           )
         : MapData(
             fountains: fountains,
+            pins: pins,
             polygons: polygons,
-            showFountains: showFountains);
+            showFountains: showFountains,
+            currentPosition: currentPosition,
+    );
   }
 
   Iterable<ModelMarker> _createFountainsMarkers(
@@ -311,7 +350,7 @@ class BlocMap extends Disposable {
     if (_searchedFields.contains(field)) {
       color = Colors.orange;
     }
-    if (_inboxFields.contains(field)) {
+    if (_inboxFields.contains(field) == true) {
       color = Colors.purple;
     }
     if (_fieldInfo.value == field || _fieldsGroup.contains(field)) {
