@@ -88,13 +88,14 @@ class InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("${name ?? ""}: ",
             style: const TextStyle(
               color: Colors.black54,
               fontSize: 15,
             )),
-        Text(value ?? "n/a", style: TextStyle(fontSize: 15)),
+        Flexible(child: Text(value ?? "n/a", style: TextStyle(fontSize: 15))),
       ],
     );
   }

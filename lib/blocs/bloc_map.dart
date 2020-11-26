@@ -102,10 +102,16 @@ class BlocMap extends Disposable {
         ? BtnsMode.none
         : BtnsMode.measurement;
     _mode.add(newMode);
+    
+    
     if (newMode == BtnsMode.none) {
       _updateMapData(
         pins: Set<ModelMarker>(),
         polygons: _handleMeasurement([]),
+      );
+    } else {
+      _updateMapData(
+        polygons: _createPolygons(_fields),
       );
     }
   }
@@ -182,7 +188,7 @@ class BlocMap extends Disposable {
   // private functions
 
   Set<Polygon> _handleMeasurement(List<LatLng> path) {
-    final polygons = _mapData.value.polygons ?? Set<Polygon>();
+    final polygons = _createPolygons(_fields);
     if (path.length > 2) {
       // TODO: optimization - pull the code from the library
       // update _area
@@ -295,10 +301,10 @@ class BlocMap extends Disposable {
       final polygon = Polygon(
         strokeWidth: 2,
         polygonId: PolygonId(field.id.toString()),
-        fillColor: color,
-        strokeColor: color.withAlpha(200),
+        fillColor: color.withAlpha(150),
+        strokeColor: color,
         points: points,
-        consumeTapEvents: true,
+        consumeTapEvents: currentMode != BtnsMode.measurement,
         onTap: () => _onFieldClick(field),
       );
       polygons.add(polygon);
