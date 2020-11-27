@@ -197,9 +197,10 @@ class BlocMap extends Disposable {
     if (path.length > 2) {
       // TODO: optimization - pull the code from the library
       // update _area
-      final area = mt.SphericalUtil.computeArea(
+      final areaSquareMeters = mt.SphericalUtil.computeArea(
           path.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
-      _area.add(area);
+      final areaHa = areaSquareMeters / 10000;
+      _area.add(areaHa);
 
       final polygon = Polygon(
         strokeWidth: 1,
