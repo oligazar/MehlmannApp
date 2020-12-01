@@ -1,4 +1,4 @@
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mahlmann_app/common/prefs.dart';
@@ -44,32 +44,26 @@ class _AppMahlmannState extends State<AppMahlmann> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: Firebase.initializeApp(),
-        builder: (context, snapshot) {
-          return MaterialApp(
-            title: 'Flutter Demo',
-            theme: ThemeData(
-              primarySwatch: Colors.green,
-              visualDensity: VisualDensity.adaptivePlatformDensity,
-            ),
-            home: _buildHomeScreen(
-                isLoading: snapshot.connectionState != ConnectionState.done,
-                hasError: snapshot.hasError),
-            localizationsDelegates: [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: [
-              const Locale('en', ''), // English, no country code
-              const Locale('de', ''), // German, no country code
-            ],
-          );
-        });
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: _buildHomeScreen(),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('en', ''), // English, no country code
+        const Locale('de', ''), // German, no country code
+      ],
+    );
   }
 
-  Widget _buildHomeScreen({bool isLoading, bool hasError}) {
+  Widget _buildHomeScreen() {
     return _AppMahlmann(
       state: this,
       child: _isAuthorized == null

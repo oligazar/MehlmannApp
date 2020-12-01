@@ -19,14 +19,14 @@ class BlocPreloader extends Disposable {
 		await _db.insertFountains(response.fountains.toList());
 		await _db.insertFields(response.fields.toList());
 		
-		final users = await _db.queryUsers();
-		final fountains = await _db.queryFountains();
-		final fields = await _db.queryFields();
+		// final users = await _db.queryUsers();
+		// final fountains = await _db.queryFountains();
+		// final fields = await _db.queryFields();
 		
-		print("users: $users");
-		print("fountains: $fountains");
-		print("fields: $fields");
-		print("articles updated successfully, size: $response");
+		// print("users: $users");
+		// print("fountains: $fountains");
+		// print("fields: $fields");
+		// print("articles updated successfully, size: $response");
 	}
 	
 	_startFetching() async {

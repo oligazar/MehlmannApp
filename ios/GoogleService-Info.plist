@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>491586444810-nf3f31g2j3lon0bg47u72ncjvn7hmr91.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.491586444810-nf3f31g2j3lon0bg47u72ncjvn7hmr91</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>491586444810-n0tgm89o9l47ddc6vhqe57tq8rhp2i6s.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyC9f6_rzRmL6Rh3BoCtQakR3-FvVgwLK1I</string>
+	<key>GCM_SENDER_ID</key>
+	<string>491586444810</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>mahlmann.app</string>
+	<key>PROJECT_ID</key>
+	<string>mahlmannapp</string>
+	<key>STORAGE_BUCKET</key>
+	<string>mahlmannapp.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:491586444810:ios:c25da9c7618fb59b2249f3</string>
+	<key>DATABASE_URL</key>
+	<string>https://mahlmannapp.firebaseio.com</string>
+</dict>
+</plist>

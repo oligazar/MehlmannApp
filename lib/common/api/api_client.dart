@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
-import 'package:mahlmann_app/models/built_value/field.dart';
+// import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fields_response.dart';
 import 'package:mahlmann_app/models/built_value/group.dart';
 import 'package:mahlmann_app/models/login_response.dart';
@@ -34,10 +34,10 @@ class ApiClient extends ApiBase {
     final h = await headers;
 
     final response = await client.getUri(url, options: Options(headers: h));
-    final list = response.data["fields"]?.map((f) => Field.fromMap(f))?.toList() ?? [];
-    final fields = List<Field>.from(list);
+    // final list = response.data["fields"]?.map((f) => Field.fromMap(f))?.toList() ?? [];
+    // final fields = List<Field>.from(list);
     
-    print("Example how to parse fields: $fields");
+    // print("Example how to parse fields: $fields");
 
     return FieldsResponse.fromMap(response.data);
   }
@@ -72,7 +72,7 @@ class ApiClient extends ApiBase {
 
     final response = await client.postUri(url,
         data: json.encode(data), options: Options(headers: await headers));
-    print("response: $response");
+    // print("response: $response");
     if (response.data["status"] == "success") {
       return Comment.fromMap(response.data["body"]);
     } else {
@@ -134,5 +134,4 @@ class ApiClient extends ApiBase {
         data: json.encode(data), options: Options(headers: await headers));
     print("response: $response");
   }
-
 }

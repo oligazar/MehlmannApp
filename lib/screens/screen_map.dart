@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
+// import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_map.dart';
 import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
+import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
@@ -90,6 +92,7 @@ class ViewMapState extends State<ViewMap> {
 
   @override
   Widget build(BuildContext context) {
+    // FirebaseCrashlytics.instance.crash();
     return Scaffold(
       body: StreamBuilder<MapData>(
           stream: bloc.mapData,
@@ -264,7 +267,7 @@ class ViewMapState extends State<ViewMap> {
 
   Set<Marker> _buildMarkers(Iterable<ModelMarker> models,
       {bool isFountain = true}) {
-    print("_buildMarkers, models: $models");
+    // print("_buildMarkers, models: $models");
     final markers = models?.map((model) {
           return Marker(
             markerId: MarkerId(model.id),
@@ -276,11 +279,11 @@ class ViewMapState extends State<ViewMap> {
               final lat = model.latLng.latitude;
               final lng = model.latLng.longitude;
               print("Marker ${model.title}, lat: $lat, lng: $lng}");
-              // final urls = MapOpener.buildMapUrls(
-              //     location: LatLng(lat, lng));
-              // if (await MapOpener.canOpen(urls)) {
-              //   MapOpener.openMap(urls);
-              // }
+              final urls = MapOpener.buildMapUrls(
+                  location: LatLng(lat, lng));
+              if (await MapOpener.canOpen(urls)) {
+                MapOpener.openMap(urls);
+              }
             },
             icon: isFountain
                 ? iconDrop
