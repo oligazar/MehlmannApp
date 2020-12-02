@@ -65,6 +65,12 @@ class BlocMap extends Disposable {
     _fieldComments.close();
     _inboxGroups.close();
   }
+  
+  void clearInboxFields() {
+    _inboxFields.clear();
+    final polygons = _createPolygons();
+    _updateMapData(polygons: polygons);
+  }
 
   void onFieldsQuery(String query) async {
     _mode.add(BtnsMode.none);
@@ -72,8 +78,9 @@ class BlocMap extends Disposable {
 
     final searchedFields = await _db.queryFields(query: query);
     _searchedFields.addAll(searchedFields ?? []);
+    _inboxFields.clear();
 
-    final polygons = _createPolygons(_fields);
+    final polygons = _createPolygons();
     _updateMapData(polygons: polygons);
 
     _updateBounds(searchedFields);
@@ -90,7 +97,7 @@ class BlocMap extends Disposable {
 
       _updateMapData(
         pins: _createPins(),
-        polygons: _createPolygons(_fields),
+        polygons: _createPolygons(),
         polylines: _createPolylines(),
       );
     }
@@ -129,14 +136,14 @@ class BlocMap extends Disposable {
       _measurement.add(null);
       _updateMapData(
         pins: Set<ModelMarker>(),
-        polygons: _createPolygons(_fields),
+        polygons: _createPolygons(),
         polylines: _createPolylines(),
       );
     } else {
       _measurement.add(_calculateMeasurement());
       _updateMapData(
         pins: _createPins(),
-        polygons: _createPolygons(_fields),
+        polygons: _createPolygons(),
         polylines: _createPolylines(),
       );
     }
@@ -154,7 +161,7 @@ class BlocMap extends Disposable {
     await _api.setFields(sentenceName, fieldIds);
     _fieldsGroup.clear();
     _updateMapData(
-      polygons: _createPolygons(_fields),
+      polygons: _createPolygons(),
     );
   }
 
@@ -173,7 +180,7 @@ class BlocMap extends Disposable {
     _measurement.add(_calculateMeasurement());
     _updateMapData(
       pins: _createPins(),
-      polygons: _createPolygons(_fields),
+      polygons: _createPolygons(),
       polylines: _createPolylines(),
     );
   }
@@ -196,7 +203,7 @@ class BlocMap extends Disposable {
     _inboxFields.clear();
     _inboxFields.addAll(await db.queryFieldsIn(ids: fieldIds.toList()) ?? []);
 
-    final polygons = _createPolygons(_fields);
+    final polygons = _createPolygons();
     _updateMapData(polygons: polygons);
 
     _updateBounds(_inboxFields);
@@ -318,7 +325,7 @@ class BlocMap extends Disposable {
   Future _prepareData() async {
     final fields = await _db.queryFields();
     _fields.addAll(fields ?? []);
-    final polygons = _createPolygons(_fields);
+    final polygons = _createPolygons();
     final fountains = await _db.queryFountains();
 
     final markers = _mapData.value.fountains ?? Set<ModelMarker>();
@@ -331,8 +338,9 @@ class BlocMap extends Disposable {
     _updateBounds(_fields);
   }
 
-  Set<Polygon> _createPolygons(Iterable<Field> fields) {
+  Set<Polygon> _createPolygons() {
     final polygons = Set<Polygon>();
+    final fields = _inboxFields.isNotEmpty ? _inboxFields : _fields;
     fields.forEach((field) {
       final points = <LatLng>[];
       field.coordinates?.forEach((c) {
@@ -388,7 +396,7 @@ class BlocMap extends Disposable {
       _fieldComments.value = [];
 
       void _updateFields() {
-        final polygons = _createPolygons(_fields);
+        final polygons = _createPolygons();
         _updateMapData(polygons: polygons);
       }
 

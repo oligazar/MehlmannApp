@@ -11,33 +11,42 @@ class SentenceInboxDialog extends StatelessWidget {
     final loc = context.loc;
     return MDialog(
       child: StreamBuilder<List<Group>>(
-        stream: bloc.inboxGroups,
-        builder: (context, snapshot) {
-          final groups = snapshot.data;
-          return Align(
-            alignment: Alignment.center,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (groups == null || groups.isEmpty) Text(loc.noSets)
-                else for (Group g in groups) Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(g.name ?? ""),
-                    ),
-                    onTap: () async {
-                      bloc.handleSentence(g.fieldIds);
+          stream: bloc.inboxGroups,
+          builder: (context, snapshot) {
+            final groups = snapshot.data;
+            return Align(
+              alignment: Alignment.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (groups == null || groups.isEmpty)
+                    Text(loc.noSets)
+                  else
+                    for (Group g in groups)
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(g.name ?? ""),
+                          ),
+                          onTap: () async {
+                            bloc.handleSentence(g.fieldIds);
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ),
+                  DialogButton(
+                    title: "Deselect",
+                    action: () {
+                      bloc.clearInboxFields();
                       Navigator.of(context).pop();
                     },
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-      ),
+                  )
+                ],
+              ),
+            );
+          }),
       btnTitle: loc.close,
     );
   }
