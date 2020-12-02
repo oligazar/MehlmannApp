@@ -5,7 +5,8 @@ class MapData {
 	Set<ModelMarker> fountains;
 	Set<ModelMarker> pins;
 	Set<Polygon> polygons;
-	Set<Polygon> measurement; // TODO: implement measurement separately
+	Set<Polygon> measurement;
+	Set<Polyline> polylines;
 	bool showFountains;
 	bool isSatelliteView;
 	ModelMarker currentPosition;
@@ -14,6 +15,8 @@ class MapData {
 		this.fountains,
 		this.pins,
 		this.polygons,
+		this.measurement,
+		this.polylines,
 		this.showFountains = true,
 		this.isSatelliteView = false,
 		this.currentPosition,
@@ -23,16 +26,20 @@ class MapData {
 		Set<ModelMarker> fountains,
 		Set<ModelMarker> pins,
 		Set<Polygon> polygons,
+		Set<Polygon> measurement,
+		Set<Polyline> polylines,
 		bool showFountains,
-		bool satelliteView,
+		bool isSatelliteView,
 		ModelMarker currentPosition,
 	}) {
 		return MapData(
 			fountains: fountains ?? this.fountains,
 			pins: pins ?? this.pins,
 			polygons: polygons ?? this.polygons,
+			measurement: measurement ?? this.measurement,
+			polylines: polylines ?? this.polylines,
 			showFountains: showFountains ?? this.showFountains,
-			isSatelliteView: satelliteView ?? this.isSatelliteView,
+			isSatelliteView: isSatelliteView ?? this.isSatelliteView,
 			currentPosition: currentPosition ?? this.currentPosition,
 		);
 	}

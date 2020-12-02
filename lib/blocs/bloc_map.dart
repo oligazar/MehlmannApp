@@ -20,7 +20,7 @@ class BlocMap extends Disposable {
   final _api = ApiClient();
   final _mapData = rx.BehaviorSubject<MapData>.seeded(MapData());
   final _bounds = rx.BehaviorSubject<LatLngBounds>();
-  final _area = rx.BehaviorSubject<double>();
+  final _measurement = rx.BehaviorSubject<double>();
   final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
   final _fieldInfo = rx.BehaviorSubject<Field>();
   final _fieldComments = rx.BehaviorSubject<List<Comment>>();
@@ -35,17 +35,19 @@ class BlocMap extends Disposable {
 
   Stream<LatLngBounds> get bounds => _bounds.stream;
 
-  Stream<double> get area => _area.stream;
+  Stream<double> get measurement => _measurement.stream;
 
   Stream<BtnsMode> get mode => _mode.stream;
 
   Stream<List<Comment>> get fieldComments => _fieldComments.stream;
-  
+
   Stream<List<Group>> get inboxGroups => _inboxGroups.stream;
-  
+
   Stream<Field> get fieldInfo => _fieldInfo.stream;
-  
+
   bool get hasFieldInfo => _fieldInfo.hasValue;
+
+  final List<LatLng> _points = List<LatLng>();
 
   BtnsMode get currentMode => _mode.value;
 
@@ -57,7 +59,7 @@ class BlocMap extends Disposable {
   void dispose() {
     _mapData.close();
     _bounds.close();
-    _area.close();
+    _measurement.close();
     _mode.close();
     _fieldInfo.close();
     _fieldComments.close();
@@ -80,23 +82,34 @@ class BlocMap extends Disposable {
   // Click handlers
 
   void onMapTap(LatLng latLng) {
-    if (_mode.value != BtnsMode.measureArea) return;
-    // https://pub.dev/packages/maps_toolkit
-    final pins = _mapData.value.pins ?? Set<ModelMarker>();
-    final lat = latLng.latitude;
-    final lng = latLng.longitude;
-    final marker = ModelMarker(
-      id: "markerId-pin-${pins.length + 1}-$lat-$lng",
-      latLng: LatLng(lat, lng),
-      hue: BitmapDescriptor.hueRed,
-      // color: f.name,
-    );
-    pins.addAll([marker]);
-    final path = (pins).map((p) => p.latLng).toList();
-    _updateMapData(
-      pins: pins,
-      polygons: _handleMeasurement(path),
-    );
+    if (_mode.value == BtnsMode.measureArea ||
+        _mode.value == BtnsMode.measureDistance) {
+      _points.add(latLng);
+
+      _measurement.add(_calculateMeasurement());
+
+      _updateMapData(
+        pins: _createPins(),
+        polygons: _createPolygons(_fields),
+        polylines: _createPolylines(),
+      );
+    }
+  }
+
+  Set<ModelMarker> _createPins() {
+    final points = currentMode == BtnsMode.measureDistance && _points.length > 2
+        ? (List<LatLng>()..add(_points.first)..add(_points.last))
+        : _points;
+    return points.map((point) {
+      final lat = point.latitude;
+      final lng = point.longitude;
+      return ModelMarker(
+        id: "markerId-pin-${_points.length}-$lat-$lng",
+        latLng: LatLng(lat, lng),
+        hue: BitmapDescriptor.hueRed,
+        // color: f.name,
+      );
+    }).toSet();
   }
 
   void onMeasurementClick() {
@@ -107,20 +120,24 @@ class BlocMap extends Disposable {
         break;
       case BtnsMode.measureDistance:
         newMode = BtnsMode.none;
+        _points.clear();
         break;
     }
-    
     _mode.add(newMode);
-    
-    
+
     if (newMode == BtnsMode.none) {
+      _measurement.add(null);
       _updateMapData(
         pins: Set<ModelMarker>(),
-        polygons: _handleMeasurement([]),
+        polygons: _createPolygons(_fields),
+        polylines: _createPolylines(),
       );
     } else {
+      _measurement.add(_calculateMeasurement());
       _updateMapData(
+        pins: _createPins(),
         polygons: _createPolygons(_fields),
+        polylines: _createPolylines(),
       );
     }
   }
@@ -152,12 +169,12 @@ class BlocMap extends Disposable {
   }
 
   void onBackBtnClick() {
-    final pins = _mapData.value.pins ?? Set<ModelMarker>();
-    pins.removeWhere((m) => m.id.contains('pin-${pins.length}'));
-    final path = pins.map((p) => p.latLng).toList();
+    _points.removeLast();
+    _measurement.add(_calculateMeasurement());
     _updateMapData(
-      pins: pins,
-      polygons: _handleMeasurement(path),
+      pins: _createPins(),
+      polygons: _createPolygons(_fields),
+      polylines: _createPolylines(),
     );
   }
 
@@ -178,7 +195,7 @@ class BlocMap extends Disposable {
     final db = DbClient();
     _inboxFields.clear();
     _inboxFields.addAll(await db.queryFieldsIn(ids: fieldIds.toList()) ?? []);
-    
+
     final polygons = _createPolygons(_fields);
     _updateMapData(polygons: polygons);
 
@@ -199,37 +216,45 @@ class BlocMap extends Disposable {
 
   // private functions
 
-  Set<Polygon> _handleMeasurement(List<LatLng> path) {
-    final polygons = _createPolygons(_fields);
-    if (path.length > 2) {
-      // TODO: optimization - pull the code from the library
-      // update _area
-      final areaSquareMeters = mt.SphericalUtil.computeArea(
-          path.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
-      final areaHa = areaSquareMeters / 10000;
-      _area.add(areaHa);
-
-      final polygon = Polygon(
-        strokeWidth: 1,
-        polygonId: PolygonId("measurement"),
-        fillColor: Colors.redAccent.withAlpha(160),
-        strokeColor: Colors.black,
-        points: path,
-      );
-      polygons.updateWhere(
-          Set.of([polygon]), (o, n) => o.polygonId == n.polygonId);
+  // calculates area in ha or distance in meters depending on the mode
+  double _calculateMeasurement() {
+    // TODO: optimization - pull the code from the library
+    if (currentMode == BtnsMode.measureArea) {
+      if (_points.length > 2) {
+        final areaSquareMeters = mt.SphericalUtil.computeArea(
+            _points.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
+        final areaHa = areaSquareMeters / 10000;
+        return areaHa;
+      }
     } else {
-      _area.add(null);
-      polygons.removeWhere((p) => p.polygonId.value == "measurement");
+      if (_points.length > 1) {
+        final distanceMeters = mt.SphericalUtil.computeLength(
+            _points.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
+        return distanceMeters;
+      }
     }
+    return null;
+  }
 
-    return polygons;
+  Set<Polyline> _createPolylines() {
+    if (currentMode == BtnsMode.measureDistance && _points.length > 1) {
+      final polyline = Polyline(
+        polylineId: PolylineId("measurement"),
+        width: 2,
+        color: Colors.blue,
+        points: _points,
+      );
+      return Set.of([polyline]);
+    } else {
+      return Set<Polyline>();
+    }
   }
 
   void _updateMapData({
     Set<ModelMarker> fountains,
     Set<ModelMarker> pins,
     Set<Polygon> polygons,
+    Set<Polyline> polylines,
     bool showFountains,
     bool isSatelliteView,
     ModelMarker currentPosition,
@@ -240,18 +265,20 @@ class BlocMap extends Disposable {
             fountains: fountains ?? mapData.fountains,
             pins: pins ?? mapData.pins,
             polygons: polygons ?? mapData.polygons,
+            polylines: polylines ?? mapData.polylines,
             showFountains: showFountains ?? mapData.showFountains,
-            satelliteView: isSatelliteView ?? mapData.isSatelliteView,
+            isSatelliteView: isSatelliteView ?? mapData.isSatelliteView,
             currentPosition: currentPosition ?? mapData.currentPosition,
           )
         : MapData(
             fountains: fountains,
             pins: pins,
             polygons: polygons,
+            polylines: polylines,
             showFountains: showFountains,
             isSatelliteView: isSatelliteView,
             currentPosition: currentPosition,
-    );
+          );
   }
 
   Iterable<ModelMarker> _createFountainsMarkers(
@@ -320,11 +347,28 @@ class BlocMap extends Disposable {
         fillColor: color.withAlpha(150),
         strokeColor: color,
         points: points,
-        consumeTapEvents: currentMode != BtnsMode.measureArea,
+        consumeTapEvents: currentMode != BtnsMode.measureArea &&
+            currentMode != BtnsMode.measureDistance,
         onTap: () => _onFieldClick(field),
       );
       polygons.add(polygon);
     });
+
+    // handle measurement polygon
+    if (_points.length > 2 && currentMode == BtnsMode.measureArea) {
+      final polygon = Polygon(
+        strokeWidth: 1,
+        polygonId: PolygonId("measurement"),
+        fillColor: Colors.redAccent.withAlpha(160),
+        strokeColor: Colors.black,
+        points: _points,
+      );
+      polygons.updateWhere(
+          Set.of([polygon]), (o, n) => o.polygonId == n.polygonId);
+    } else {
+      polygons.removeWhere((p) => p.polygonId.value == "measurement");
+    }
+
     return polygons;
   }
 
@@ -344,23 +388,18 @@ class BlocMap extends Disposable {
       _fieldComments.value = [];
 
       void _updateFields() {
-	      final polygons = _createPolygons(_fields);
-	      _updateMapData(polygons: polygons);
+        final polygons = _createPolygons(_fields);
+        _updateMapData(polygons: polygons);
       }
-      
+
       if (currentMode != BtnsMode.createSentence) {
         _fieldInfo.add(field);
         _updateFields();
-        //       		selectedRegion: field,
-        //           showFieldWindow: true,
-        //           showSetWindow: false,
-        //           showSearchWindow: false,
-        //           showInboxWindow: false,
 
         final comments = await _api.fetchComments(field.id);
         _fieldComments.value = comments;
       } else {
-      	// grouping == true
+        // grouping == true
         _fieldsGroup.add(field);
         _updateFields();
       }

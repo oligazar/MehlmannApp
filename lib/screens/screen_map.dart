@@ -103,14 +103,15 @@ class ViewMapState extends State<ViewMap> {
                 GoogleMap(
                   zoomControlsEnabled: false,
                   myLocationButtonEnabled: false,
-                  mapType: mapData.isSatelliteView
-                      ? MapType.satellite
-                      : MapType.normal,
                   polygons: mapData?.polygons,
+                  polylines: mapData?.polylines,
                   markers: _buildAllMarkers(mapData),
                   initialCameraPosition: _kGooglePlex,
                   onMapCreated: _onMapCreated,
                   onTap: bloc.onMapTap,
+                  mapType: mapData?.isSatelliteView == true
+                      ? MapType.satellite
+                      : MapType.normal,
                 ),
                 Align(
                   alignment: Alignment.topCenter,
@@ -122,7 +123,7 @@ class ViewMapState extends State<ViewMap> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(top: 44),
+                              padding: const EdgeInsets.only(top: 20),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 mainAxisSize: MainAxisSize.min,
@@ -187,12 +188,18 @@ class ViewMapState extends State<ViewMap> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         StreamBuilder<double>(
-                            stream: bloc.area,
+                            stream: bloc.measurement,
                             builder: (context, snapshot) {
-                              final area = snapshot.data;
-                              return area != null
-                                  ? Text("${area.toStringAsFixed(2)} ha")
-                                  : Container(height: 0);
+                              final measurement = snapshot.data;
+                              if (measurement != null) {
+                                final mString =
+                                    bloc.currentMode == BtnsMode.measureArea
+                                        ? "${measurement.toStringAsFixed(2)} ha"
+                                        : "${measurement.toStringAsFixed(2)} m";
+                                return Text(mString);
+                              } else {
+                                return Container(height: 0);
+                              }
                             }),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
