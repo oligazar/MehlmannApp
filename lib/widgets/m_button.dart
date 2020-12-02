@@ -1,40 +1,47 @@
 import 'package:flutter/material.dart';
 
 class MButton extends StatelessWidget {
+  final IconData icon;
   final VoidCallback onPressed;
-  final String text;
+  final bool isActive;
 
   const MButton({
     Key key,
-    this.text,
+    this.icon,
     this.onPressed,
+    this.isActive = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: SizedBox(
-        child: FlatButton(
-          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 16),
-          onPressed: onPressed,
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Material(
+        shadowColor: Colors.black54,
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        child: InkWell(
+          onTap: onPressed,
           child: Container(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontWeight: FontWeight.normal,
-                  fontSize: 12
-                ),
-              ),
+            height: 48,
+            width: 48,
+            child: Icon(
+              icon ?? Icons.ac_unit,
+              color: isActive ? Colors.black.withAlpha(160) : Colors.black38,
             ),
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          color: Colors.white.withAlpha(200),
         ),
-        width: 50,
-        height: 86,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 0,
+            blurRadius: 2,
+            offset: Offset(1, 2), // changes position of shadow
+          ),
+        ],
       ),
     );
   }

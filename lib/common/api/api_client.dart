@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
-// import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fields_response.dart';
 import 'package:mahlmann_app/models/built_value/group.dart';
 import 'package:mahlmann_app/models/login_response.dart';

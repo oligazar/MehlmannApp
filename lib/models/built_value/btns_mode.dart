@@ -7,7 +7,9 @@ part 'btns_mode.g.dart';
 
 class BtnsMode extends EnumClass {
 	static const BtnsMode none = _$none;
-	static const BtnsMode measurement = _$measurement;
+	static const BtnsMode measureArea = _$measureArea;
+	static const BtnsMode measureDistance = _$measureDistance;
+	
 	static const BtnsMode search = _$search;
 	static const BtnsMode selectSentence = _$selectSentence;
 	static const BtnsMode createSentence = _$createSentence; // grouping

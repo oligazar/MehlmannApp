@@ -102,7 +102,10 @@ class ViewMapState extends State<ViewMap> {
               children: [
                 GoogleMap(
                   zoomControlsEnabled: false,
-                  mapType: MapType.normal,
+                  myLocationButtonEnabled: false,
+                  mapType: mapData.isSatelliteView
+                      ? MapType.satellite
+                      : MapType.normal,
                   polygons: mapData?.polygons,
                   markers: _buildAllMarkers(mapData),
                   initialCameraPosition: _kGooglePlex,
@@ -126,9 +129,11 @@ class ViewMapState extends State<ViewMap> {
                                 children: [
                                   MButton(
                                     onPressed: bloc.onMeasurementClick,
-                                    text: mode == BtnsMode.measurement
-                                        ? loc.stopMeasurement
-                                        : loc.startMeasurement,
+                                    icon: mode == BtnsMode.measureDistance
+                                        ? Icons.straighten
+                                        : Icons.square_foot,
+                                    isActive: mode == BtnsMode.measureArea ||
+                                        mode == BtnsMode.measureDistance,
                                   ),
                                   FutureBuilder<bool>(
                                       future: Prefs.getLoginResponse()
@@ -138,25 +143,24 @@ class ViewMapState extends State<ViewMap> {
                                         return isAdmin && bloc.hasFieldInfo
                                             ? MButton(
                                                 onPressed: _onSentenceBtnClick,
-                                                text: mode ==
-                                                        BtnsMode.createSentence
-                                                    ? loc.createSentence
-                                                    : loc.selectSentence,
+                                                isActive: mode ==
+                                                    BtnsMode.createSentence,
+                                                // ? loc.createSentence
+                                                // : loc.selectSentence,
                                               )
                                             : Container();
                                       }),
                                   MButton(
                                     onPressed: bloc.onSearchFieldClick,
-                                    text: loc.searchField,
+                                    icon: Icons.search,
+                                    isActive: mode != BtnsMode.search,
                                   ),
                                   MButton(
-                                    onPressed: _onSentenceInboxClick,
-                                    text: loc.sentenceInbox,
-                                  ),
+                                      onPressed: _onSentenceInboxClick,
+                                      icon: Icons.inbox),
                                   MButton(
-                                    onPressed: _logOut,
-                                    text: loc.logOut,
-                                  ),
+                                      onPressed: _logOut,
+                                      icon: Icons.power_settings_new),
                                 ],
                               ),
                             ),
@@ -179,36 +183,41 @@ class ViewMapState extends State<ViewMap> {
                   alignment: Alignment.bottomCenter,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        MButton(
-                          onPressed: _goToCurrentPosition,
-                          text: loc.currentPosition,
-                        ),
-                        MButton(
-                          onPressed: bloc.onFountainsBtnClicked,
-                          text: mapData?.showFountains != false
-                              ? loc.fountainOff
-                              : loc.fountainOn,
-                        ),
                         StreamBuilder<double>(
                             stream: bloc.area,
                             builder: (context, snapshot) {
                               final area = snapshot.data;
                               return area != null
-                                  ? MButton(
-                                      onPressed: () {},
-                                      text: "${area.toStringAsFixed(2)} ha",
-                                    )
+                                  ? Text("${area.toStringAsFixed(2)} ha")
                                   : Container(height: 0);
                             }),
-                        mapData?.pins?.isNotEmpty == true
-                            ? MButton(
-                                onPressed: bloc.onBackBtnClick,
-                                text: loc.back,
-                              )
-                            : Container(height: 0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            MButton(
+                                onPressed: bloc.switchMapType,
+                                icon: Icons.map,
+                                isActive: !mapData.isSatelliteView),
+                            MButton(
+                              onPressed: _goToCurrentPosition,
+                              icon: Icons.location_on,
+                            ),
+                            MButton(
+                              onPressed: bloc.onFountainsBtnClicked,
+                              isActive: mapData?.showFountains != false,
+                              icon: Icons.invert_colors,
+                            ),
+                            mapData?.pins?.isNotEmpty == true
+                                ? MButton(
+                                    onPressed: bloc.onBackBtnClick,
+                                    // text: loc.back,
+                                    icon: Icons.undo)
+                                : Container(height: 0),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -279,8 +288,7 @@ class ViewMapState extends State<ViewMap> {
               final lat = model.latLng.latitude;
               final lng = model.latLng.longitude;
               print("Marker ${model.title}, lat: $lat, lng: $lng}");
-              final urls = MapOpener.buildMapUrls(
-                  location: LatLng(lat, lng));
+              final urls = MapOpener.buildMapUrls(location: LatLng(lat, lng));
               if (await MapOpener.canOpen(urls)) {
                 MapOpener.openMap(urls);
               }

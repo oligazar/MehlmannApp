@@ -80,7 +80,7 @@ class BlocMap extends Disposable {
   // Click handlers
 
   void onMapTap(LatLng latLng) {
-    if (_mode.value != BtnsMode.measurement) return;
+    if (_mode.value != BtnsMode.measureArea) return;
     // https://pub.dev/packages/maps_toolkit
     final pins = _mapData.value.pins ?? Set<ModelMarker>();
     final lat = latLng.latitude;
@@ -100,9 +100,16 @@ class BlocMap extends Disposable {
   }
 
   void onMeasurementClick() {
-    final newMode = _mode.value == BtnsMode.measurement
-        ? BtnsMode.none
-        : BtnsMode.measurement;
+    BtnsMode newMode = BtnsMode.measureArea;
+    switch (_mode.value) {
+      case BtnsMode.measureArea:
+        newMode = BtnsMode.measureDistance;
+        break;
+      case BtnsMode.measureDistance:
+        newMode = BtnsMode.none;
+        break;
+    }
+    
     _mode.add(newMode);
     
     
@@ -224,6 +231,7 @@ class BlocMap extends Disposable {
     Set<ModelMarker> pins,
     Set<Polygon> polygons,
     bool showFountains,
+    bool isSatelliteView,
     ModelMarker currentPosition,
   }) {
     final MapData mapData = _mapData.value;
@@ -233,6 +241,7 @@ class BlocMap extends Disposable {
             pins: pins ?? mapData.pins,
             polygons: polygons ?? mapData.polygons,
             showFountains: showFountains ?? mapData.showFountains,
+            satelliteView: isSatelliteView ?? mapData.isSatelliteView,
             currentPosition: currentPosition ?? mapData.currentPosition,
           )
         : MapData(
@@ -240,6 +249,7 @@ class BlocMap extends Disposable {
             pins: pins,
             polygons: polygons,
             showFountains: showFountains,
+            isSatelliteView: isSatelliteView,
             currentPosition: currentPosition,
     );
   }
@@ -310,7 +320,7 @@ class BlocMap extends Disposable {
         fillColor: color.withAlpha(150),
         strokeColor: color,
         points: points,
-        consumeTapEvents: currentMode != BtnsMode.measurement,
+        consumeTapEvents: currentMode != BtnsMode.measureArea,
         onTap: () => _onFieldClick(field),
       );
       polygons.add(polygon);
@@ -330,7 +340,7 @@ class BlocMap extends Disposable {
 
   // onPolygonPress
   Future _onFieldClick(Field field) async {
-    if (currentMode != BtnsMode.measurement) {
+    if (currentMode != BtnsMode.measureArea) {
       _fieldComments.value = [];
 
       void _updateFields() {
@@ -370,5 +380,9 @@ class BlocMap extends Disposable {
     }
 
     return color;
+  }
+
+  void switchMapType() {
+    _updateMapData(isSatelliteView: !_mapData.value.isSatelliteView);
   }
 }
