@@ -23,6 +23,7 @@ import 'package:mahlmann_app/widgets/dialogs/select_sentence_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 
+// drawing custom marker on the field: https://github.com/flutter/flutter/issues/26109
 class ScreenMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -144,21 +145,21 @@ class ViewMapState extends State<ViewMap> {
                                         return isAdmin && bloc.hasFieldInfo
                                             ? MButton(
                                                 onPressed: _onSentenceBtnClick,
-                                                isActive: mode ==
-                                                    BtnsMode.createSentence,
+                                                icon: mode ==
+                                                    BtnsMode.createSentence ? Icons.add : Icons.edit,
                                                 // ? loc.createSentence
                                                 // : loc.selectSentence,
                                               )
                                             : Container();
                                       }),
                                   MButton(
-                                    onPressed: bloc.onSearchFieldClick,
+                                    onPressed: bloc.onSearchFieldBtnClick,
                                     icon: Icons.search,
                                     isActive: mode != BtnsMode.search,
                                   ),
                                   MButton(
                                       onPressed: _onSentenceInboxClick,
-                                      icon: Icons.inbox),
+                                      icon: Icons.move_to_inbox),
                                   MButton(
                                       onPressed: _logOut,
                                       icon: Icons.power_settings_new),
@@ -171,9 +172,30 @@ class ViewMapState extends State<ViewMap> {
                                 vertical: 16,
                               ),
                               child: mode == BtnsMode.search
-                                  ? SearchBox(onChanged: (query) {
-                                      bloc.onFieldsQuery(query);
-                                    })
+                                  ? SearchBox(
+                                      onSubmitted: bloc.onFieldsQuerySubmitted,
+                                      onChanged: bloc.onFieldsQueryChanged,
+                                      child: StreamBuilder<List<Field>>(
+                                        stream: bloc.searchedFieldSuggestions,
+                                        builder: (context, snapshot) {
+                                          final fields = snapshot.data ?? [];
+                                          return SingleChildScrollView(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                for (Field field in fields)
+                                                  SearchSuggestionItem(
+                                                    field: field,
+                                                    onSelected: bloc
+                                                        .onSuggestionFieldClick,
+                                                  )
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    )
                                   : Container(),
                             ),
                           ],
@@ -205,9 +227,10 @@ class ViewMapState extends State<ViewMap> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             MButton(
-                                onPressed: bloc.switchMapType,
-                                icon: Icons.map,
-                                isActive: !mapData.isSatelliteView),
+                              onPressed: bloc.switchMapType,
+                              icon: Icons.map,
+                              isActive: mapData?.isSatelliteView == true,
+                            ),
                             MButton(
                               onPressed: _goToCurrentPosition,
                               icon: Icons.location_on,
@@ -288,9 +311,6 @@ class ViewMapState extends State<ViewMap> {
           return Marker(
             markerId: MarkerId(model.id),
             position: model.latLng,
-//                                infoWindow: InfoWindow(
-//                                  title: "Hello"
-//                                ),
             onTap: () async {
               final lat = model.latLng.latitude;
               final lng = model.latLng.longitude;
@@ -345,6 +365,30 @@ class ViewMapState extends State<ViewMap> {
         value: bloc,
         builder: (context, _) => SentenceInboxDialog(),
       ),
+    );
+  }
+}
+
+class SearchSuggestionItem extends StatelessWidget {
+  const SearchSuggestionItem({
+    Key key,
+    @required this.field,
+    @required this.onSelected,
+  }) : super(key: key);
+
+  final Field field;
+  final Function(Field) onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          field.name,
+        ),
+      ),
+      onTap: () => onSelected(field),
     );
   }
 }

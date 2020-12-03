@@ -16,6 +16,7 @@ import 'package:maps_toolkit/maps_toolkit.dart' as mt;
 import 'package:rxdart/rxdart.dart' as rx;
 
 class BlocMap extends Disposable {
+  // Try GetIt sometimes for this things!
   final _db = DbClient();
   final _api = ApiClient();
   final _mapData = rx.BehaviorSubject<MapData>.seeded(MapData());
@@ -23,6 +24,7 @@ class BlocMap extends Disposable {
   final _measurement = rx.BehaviorSubject<double>();
   final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
   final _fieldInfo = rx.BehaviorSubject<Field>();
+  final _searchedFieldSuggestions = rx.BehaviorSubject<List<Field>>.seeded([]); // orange
   final _fieldComments = rx.BehaviorSubject<List<Comment>>();
   final _inboxGroups = rx.BehaviorSubject<List<Group>>(); // purple
 
@@ -44,6 +46,8 @@ class BlocMap extends Disposable {
   Stream<List<Group>> get inboxGroups => _inboxGroups.stream;
 
   Stream<Field> get fieldInfo => _fieldInfo.stream;
+  
+  Stream<List<Field>> get searchedFieldSuggestions => _searchedFieldSuggestions.stream;
 
   bool get hasFieldInfo => _fieldInfo.hasValue;
 
@@ -64,6 +68,7 @@ class BlocMap extends Disposable {
     _fieldInfo.close();
     _fieldComments.close();
     _inboxGroups.close();
+    _searchedFieldSuggestions.close();
   }
   
   void clearInboxFields() {
@@ -72,18 +77,41 @@ class BlocMap extends Disposable {
     _updateMapData(polygons: polygons);
   }
 
-  void onFieldsQuery(String query) async {
+  void onFieldsQuerySubmitted(String query) async {
     _mode.add(BtnsMode.none);
     print("query: $query");
 
     final searchedFields = await _db.queryFields(query: query);
-    _searchedFields.addAll(searchedFields ?? []);
     _inboxFields.clear();
+    _searchedFields.clear();
+    _searchedFieldSuggestions.add(null);
+    _searchedFields.addAll(searchedFields ?? []);
 
     final polygons = _createPolygons();
     _updateMapData(polygons: polygons);
 
     _updateBounds(searchedFields);
+  }
+  
+  void onSuggestionFieldClick(Field field) async {
+    _mode.add(BtnsMode.none);
+    _searchedFieldSuggestions.add(null);
+    _inboxFields.clear();
+    _searchedFields.clear();
+    _searchedFields.addAll([field]);
+
+    final polygons = _createPolygons();
+    _updateMapData(polygons: polygons);
+
+    _updateBounds([field]);
+  }
+
+  void onFieldsQueryChanged(String query) async {
+    // update suggestions
+    if (query.length > 1) {
+      final searchedFields = await _db.queryFields(query: query);
+      _searchedFieldSuggestions.add(searchedFields ?? []);
+    }
   }
 
   // Click handlers
@@ -165,10 +193,11 @@ class BlocMap extends Disposable {
     );
   }
 
-  void onSearchFieldClick() {
+  void onSearchFieldBtnClick() {
     final newMode =
         _mode.value == BtnsMode.search ? BtnsMode.none : BtnsMode.search;
     _mode.add(newMode);
+    _searchedFieldSuggestions.add(null);
   }
 
   void onFountainsBtnClicked() {
@@ -407,8 +436,13 @@ class BlocMap extends Disposable {
         final comments = await _api.fetchComments(field.id);
         _fieldComments.value = comments;
       } else {
+        _fieldInfo.add(null);
         // grouping == true
-        _fieldsGroup.add(field);
+        if (_fieldsGroup.contains(field)) {
+          _fieldsGroup.remove(field);
+        } else {
+          _fieldsGroup.add(field);
+        }
         _updateFields();
       }
     }
