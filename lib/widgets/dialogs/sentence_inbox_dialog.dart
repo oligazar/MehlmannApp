@@ -31,7 +31,7 @@ class SentenceInboxDialog extends StatelessWidget {
                             child: Text(g.name ?? ""),
                           ),
                           onTap: () async {
-                            bloc.handleSentence(g.fieldIds);
+                            bloc.handleSentence(g.fieldIds.toList());
                             Navigator.of(context).pop();
                           },
                         ),

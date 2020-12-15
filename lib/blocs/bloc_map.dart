@@ -1,4 +1,3 @@
-import 'package:built_collection/src/list.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/api/api_client.dart';
@@ -111,6 +110,8 @@ class BlocMap extends Disposable {
     if (query.length > 1) {
       final searchedFields = await _db.queryFields(query: query);
       _searchedFieldSuggestions.add(searchedFields ?? []);
+    } else {
+      _searchedFieldSuggestions.add([]);
     }
   }
 
@@ -227,7 +228,7 @@ class BlocMap extends Disposable {
     _inboxGroups.value = groups;
   }
 
-  void handleSentence(BuiltList<int> fieldIds) async {
+  void handleSentence(List<int> fieldIds) async {
     final db = DbClient();
     _inboxFields.clear();
     _inboxFields.addAll(await db.queryFieldsIn(ids: fieldIds.toList()) ?? []);
