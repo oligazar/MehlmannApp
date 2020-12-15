@@ -49,6 +49,8 @@ class MLocalizations {
   String get no => "Nein";
 
   String get name => "Name";
+  
+  String get type => "Type";
 
   String get status => "Status";
 

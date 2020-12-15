@@ -51,7 +51,7 @@ class BlocMap extends Disposable {
 
   bool get hasFieldInfo => _fieldInfo.hasValue;
 
-  final List<LatLng> _points = List<LatLng>();
+  final List<LatLng> _points = <LatLng>[];
 
   BtnsMode get currentMode => _mode.value;
 
@@ -133,7 +133,7 @@ class BlocMap extends Disposable {
 
   Set<ModelMarker> _createPins() {
     final points = currentMode == BtnsMode.measureDistance && _points.length > 2
-        ? (List<LatLng>()..add(_points.first)..add(_points.last))
+        ? <LatLng>[_points.first, _points.last]
         : _points;
     return points.map((point) {
       final lat = point.latitude;

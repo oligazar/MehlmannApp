@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-// import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/app_mahlmann.dart';
@@ -12,12 +11,16 @@ import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
+import 'package:mahlmann_app/models/built_value/comment.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
+import 'package:mahlmann_app/models/built_value/fountain.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
+import 'package:mahlmann_app/widgets/dialogs/m_dialog.dart';
 import 'package:mahlmann_app/widgets/dialogs/sentence_inbox_dialog.dart';
 import 'package:mahlmann_app/widgets/m_button.dart';
 import 'package:mahlmann_app/widgets/dialogs/field_info_dialog.dart';
+import 'package:mahlmann_app/widgets/m_text_field.dart';
 import 'package:mahlmann_app/widgets/search_box.dart';
 import 'package:mahlmann_app/widgets/dialogs/select_sentence_dialog.dart';
 import 'package:provider/provider.dart';
@@ -55,6 +58,7 @@ class ViewMapState extends State<ViewMap> {
   StreamSubscription _mapDataSubscription;
   BitmapDescriptor iconDrop;
   StreamSubscription<Field> _fieldInfoSubscription;
+  StreamSubscription<Fountain> _fountainInfoSubscription;
 
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
@@ -81,9 +85,51 @@ class ViewMapState extends State<ViewMap> {
         await showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (BuildContext context) => Provider.value(
-            value: bloc,
-            builder: (context, _) => FieldInfoDialog(field),
+          builder: (BuildContext context) => MDialog(
+            child: StreamBuilder<List<Comment>>(
+                stream: bloc.fieldComments,
+                builder: (context, snapshot) {
+                  final comments = snapshot.data ?? [];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.center,
+                        child: DialogButton(
+                          title: loc.route,
+                          action: () {
+                            final c = field.coordinates.firstOrNull;
+                            if (c.latitude != null && c.longitude != null) {
+                              final urls = MapOpener.buildMapUrls(
+                                  location: LatLng(c.latitude, c.longitude));
+                              MapOpener.openMap(urls);
+                            }
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ),
+                      InfoRow(loc.name, field.name),
+                      InfoRow(loc.status, field.status),
+                      InfoRow(loc.cabbage, field.isCabbage),
+                      InfoRow(
+                          loc.titleArea,
+                          field.areaSize != null
+                              ? "${field.areaSize.toStringAsFixed(2)} ha"
+                              : null),
+                      Text(loc.comments),
+                      for (Comment c in comments) InfoRow(c.user, c.text),
+                      const SizedBox(height: 8),
+                      MTextField(
+                        hint: loc.comment,
+                        onSubmitted: (comment) {
+                          // clear text field ???
+                          bloc.onSubmitComment(field.id, comment);
+                        },
+                      ),
+                    ],
+                  );
+                }),
+            btnTitle: loc.close,
           ),
         );
       }
@@ -114,18 +160,17 @@ class ViewMapState extends State<ViewMap> {
                       ? MapType.satellite
                       : MapType.normal,
                 ),
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: StreamBuilder<BtnsMode>(
-                      stream: bloc.mode,
-                      builder: (context, snapshot) {
-                        final mode = snapshot.data;
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 20),
-                              child: Row(
+                SafeArea(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: StreamBuilder<BtnsMode>(
+                        stream: bloc.mode,
+                        builder: (context, snapshot) {
+                          final mode = snapshot.data;
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -146,7 +191,9 @@ class ViewMapState extends State<ViewMap> {
                                             ? MButton(
                                                 onPressed: _onSentenceBtnClick,
                                                 icon: mode ==
-                                                    BtnsMode.createSentence ? Icons.add : Icons.edit,
+                                                        BtnsMode.createSentence
+                                                    ? Icons.add
+                                                    : Icons.edit,
                                                 // ? loc.createSentence
                                                 // : loc.selectSentence,
                                               )
@@ -165,47 +212,47 @@ class ViewMapState extends State<ViewMap> {
                                       icon: Icons.power_settings_new),
                                 ],
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                child: mode == BtnsMode.search
+                                    ? SearchBox(
+                                        onSubmitted:
+                                            bloc.onFieldsQuerySubmitted,
+                                        onChanged: bloc.onFieldsQueryChanged,
+                                        child: StreamBuilder<List<Field>>(
+                                          stream: bloc.searchedFieldSuggestions,
+                                          builder: (context, snapshot) {
+                                            final fields = snapshot.data ?? [];
+                                            return SingleChildScrollView(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  for (Field field in fields)
+                                                    SearchSuggestionItem(
+                                                      field: field,
+                                                      onSelected: bloc
+                                                          .onSuggestionFieldClick,
+                                                    )
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      )
+                                    : Container(),
                               ),
-                              child: mode == BtnsMode.search
-                                  ? SearchBox(
-                                      onSubmitted: bloc.onFieldsQuerySubmitted,
-                                      onChanged: bloc.onFieldsQueryChanged,
-                                      child: StreamBuilder<List<Field>>(
-                                        stream: bloc.searchedFieldSuggestions,
-                                        builder: (context, snapshot) {
-                                          final fields = snapshot.data ?? [];
-                                          return SingleChildScrollView(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                for (Field field in fields)
-                                                  SearchSuggestionItem(
-                                                    field: field,
-                                                    onSelected: bloc
-                                                        .onSuggestionFieldClick,
-                                                  )
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    )
-                                  : Container(),
-                            ),
-                          ],
-                        );
-                      }),
+                            ],
+                          );
+                        }),
+                  ),
                 ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
+                SafeArea(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -263,6 +310,7 @@ class ViewMapState extends State<ViewMap> {
     super.dispose();
     _mapDataSubscription?.cancel();
     _fieldInfoSubscription?.cancel();
+    _fountainInfoSubscription?.cancel();
   }
 
   _onMapCreated(GoogleMapController controller) {
@@ -304,20 +352,52 @@ class ViewMapState extends State<ViewMap> {
     return markers;
   }
 
-  Set<Marker> _buildMarkers(Iterable<ModelMarker> models,
-      {bool isFountain = true}) {
+  Set<Marker> _buildMarkers(
+    Iterable<ModelMarker> models, {
+    bool isFountain = true,
+  }) {
     // print("_buildMarkers, models: $models");
     final markers = models?.map((model) {
           return Marker(
             markerId: MarkerId(model.id),
             position: model.latLng,
             onTap: () async {
-              final lat = model.latLng.latitude;
-              final lng = model.latLng.longitude;
-              print("Marker ${model.title}, lat: $lat, lng: $lng}");
-              final urls = MapOpener.buildMapUrls(location: LatLng(lat, lng));
-              if (await MapOpener.canOpen(urls)) {
-                MapOpener.openMap(urls);
+              if (isFountain && model != null) {
+                await showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (BuildContext context) => MDialog(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Align(
+                          alignment: Alignment.center,
+                          child: DialogButton(
+                            title: loc.route,
+                            action: () {
+                              final c = model.latLng;
+                              if (c.latitude != null && c.longitude != null) {
+                                _openMap(
+                                  model.latLng.latitude,
+                                  model.latLng.longitude,
+                                  title: model.title,
+                                );
+                              }
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ),
+                        InfoRow(loc.name, model.title),
+                      ],
+                    ),
+                    btnTitle: loc.close,
+                  ),
+                );
+                // show dialog first
+                // and then open map
+              } else {
+                _openMap(model.latLng.latitude, model.latLng.longitude,
+                    title: model.title);
               }
             },
             icon: isFountain
@@ -328,6 +408,14 @@ class ViewMapState extends State<ViewMap> {
         })?.toSet() ??
         Set<Marker>();
     return markers;
+  }
+
+  Future _openMap(double lat, double lng, {String title}) async {
+    print("Marker $title, lat: $lat, lng: $lng}");
+    final urls = MapOpener.buildMapUrls(location: LatLng(lat, lng));
+    if (await MapOpener.canOpen(urls)) {
+      MapOpener.openMap(urls);
+    }
   }
 
   Future _logOut() async {
