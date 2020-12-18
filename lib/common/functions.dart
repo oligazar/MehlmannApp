@@ -6,27 +6,35 @@ import 'package:geolocator/geolocator.dart';
 import 'package:package_info/package_info.dart';
 
 Future<LatLng> get currentLocation async {
-	LatLng currentLocation;
-	try {
-		final status = await Geolocator().checkGeolocationPermissionStatus();
-		if (status == GeolocationStatus.granted) {
+	Future<LatLng> getLocation() async {
+		LatLng latLng;
+		try {
+			// final status = await Geolocator().checkGeolocationPermissionStatus();
+			// if (status == GeolocationStatus.granted) {
 			print("currentLocation, beforeTime: $millis");
-			final position = await Geolocator().getLastKnownPosition().timeout(const Duration(seconds: 3)) ??
-					await Geolocator().getCurrentPosition().timeout(const Duration(seconds: 3));
+			final position = await Geolocator().getCurrentPosition();
 			
-			currentLocation = LatLng(position.latitude, position.longitude);
+			latLng = LatLng(position.latitude, position.longitude);
 			
-			print("currentLocation, afterTime: $millis, currentLocation: $currentLocation");
+			print("currentLocation, afterTime: $millis, latLng: $latLng");
+			// }
+		} on PlatformException catch (e) {
+			print("functions, currentLocation, exception: $e");
+			if (e.code == 'PERMISSION_DENIED') {
+				print('Permission denied');
+			}
+		} on TimeoutException catch (e) {
+			print("functions, currentLocation, exception: $e");
 		}
-	} on PlatformException catch (e) {
-		print("functions, currentLocation, exception: $e");
-		if (e.code == 'PERMISSION_DENIED') {
-			print('Permission denied');
-		}
-	} on TimeoutException catch (e) {
-		print("functions, currentLocation, exception: $e");
+		return latLng;
 	}
-	return currentLocation;
+	LatLng location = await getLocation();
+	final status = await Geolocator().checkGeolocationPermissionStatus();
+	if (location == null && status == GeolocationStatus.granted) {
+		location = await getLocation();
+	}
+	
+	return location;
 }
 
 Future<String> get buildVersion async =>
