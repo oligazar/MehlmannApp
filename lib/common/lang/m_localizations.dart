@@ -73,6 +73,8 @@ class MLocalizations {
   String get msgSuccess => "Der Satz wurde erfolgreich erstellt.";
 
   String get noSets => "No sets.";
+
+  String get deselect => "Deaktivieren";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

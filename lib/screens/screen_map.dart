@@ -161,6 +161,7 @@ class ViewMapState extends State<ViewMap> {
                       : MapType.normal,
                 ),
                 SafeArea(
+                  minimum: EdgeInsets.only(top: 28),
                   child: Align(
                     alignment: Alignment.topCenter,
                     child: StreamBuilder<BtnsMode>(
@@ -251,6 +252,7 @@ class ViewMapState extends State<ViewMap> {
                   ),
                 ),
                 SafeArea(
+                  minimum: EdgeInsets.only(bottom: 20),
                   child: Align(
                     alignment: Alignment.bottomCenter,
                     child: Column(

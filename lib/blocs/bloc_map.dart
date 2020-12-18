@@ -225,7 +225,8 @@ class BlocMap extends Disposable {
 
   void onSentenceInboxClick() async {
     final groups = await _api.fetchGroups();
-    _inboxGroups.value = groups;
+    final filtered = groups.where((group) => group.name?.isNotEmpty == true).toList();
+    _inboxGroups.value = filtered;
   }
 
   void handleSentence(List<int> fieldIds) async {

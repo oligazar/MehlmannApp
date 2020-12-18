@@ -15,7 +15,7 @@ class SentenceInboxDialog extends StatelessWidget {
           builder: (context, snapshot) {
             final groups = snapshot.data;
             return Align(
-              alignment: Alignment.center,
+              alignment: Alignment.topCenter,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -37,7 +37,7 @@ class SentenceInboxDialog extends StatelessWidget {
                         ),
                       ),
                   DialogButton(
-                    title: "Deselect",
+                    title: loc.deselect,
                     action: () {
                       bloc.clearInboxFields();
                       Navigator.of(context).pop();
