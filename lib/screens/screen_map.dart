@@ -141,7 +141,6 @@ class ViewMapState extends State<ViewMap> {
 
   @override
   Widget build(BuildContext context) {
-    // FirebaseCrashlytics.instance.crash();
     return Scaffold(
       body: StreamBuilder<MapData>(
           stream: _bloc.mapData,
@@ -444,7 +443,7 @@ class ViewMapState extends State<ViewMap> {
     }
   }
 
-  Future _logOut({bool shouldShowDialog = true}) async {
+  Future  _logOut({bool shouldShowDialog = true}) async {
     bool shouldLogout;
     if (shouldShowDialog) {
       shouldLogout = await showDialog(

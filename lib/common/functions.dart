@@ -9,10 +9,9 @@ Future<LatLng> get currentLocation async {
 	Future<LatLng> getLocation() async {
 		LatLng latLng;
 		try {
-			// final status = await Geolocator().checkGeolocationPermissionStatus();
-			// if (status == GeolocationStatus.granted) {
 			print("currentLocation, beforeTime: $millis");
-			final position = await Geolocator().getCurrentPosition();
+			final position = await Geolocator().getLastKnownPosition() ??
+					await Geolocator().getCurrentPosition();
 			
 			latLng = LatLng(position.latitude, position.longitude);
 			

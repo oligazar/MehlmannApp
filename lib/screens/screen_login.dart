@@ -3,6 +3,7 @@ import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_login.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/functions.dart';
+import 'package:mahlmann_app/common/lang/m_localizations.dart';
 import 'package:mahlmann_app/models/response_wrapper.dart';
 import 'package:mahlmann_app/models/login_response.dart';
 import 'package:provider/provider.dart';
@@ -31,14 +32,15 @@ class _ViewLoginState extends State<ViewLogin> {
   bool _autoValidate = false;
   bool _obscureText = true;
 
-  BlocLogin get bloc => context.provide<BlocLogin>();
+  BlocLogin get _bloc => context.provide<BlocLogin>();
+  MLocalizations get _loc => context.loc;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: StreamBuilder<ResponseWrapper<LoginResponse>>(
-            stream: bloc.userLogin,
+            stream: _bloc.userLogin,
             builder: (context, snap) {
               final result = snap.data;
               return Container(
@@ -170,7 +172,7 @@ class _ViewLoginState extends State<ViewLogin> {
 
   void _tryLogin() async {
     if (_validateAndSave()) {
-      final resp = await bloc.auth();
+      final resp = await _bloc.auth();
       AppMahlmann.of(context).setIsAuthorized(resp?.token != null);
     } else {
       setState(() {

@@ -11,11 +11,11 @@ class BlocLogin extends Disposable {
   final _api = ApiClient();
   final _userLogin = rx.BehaviorSubject<ResponseWrapper<LoginResponse>>();
 
-  var userLogin;
+  Stream<ResponseWrapper<LoginResponse>> get userLogin => _userLogin.stream;
 
 	@override
 	void dispose() {
-		// TODO: implement dispose
+		_userLogin.close();
 	}
 
   Future<LoginResponse> auth() async {

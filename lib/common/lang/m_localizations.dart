@@ -2,19 +2,19 @@ import 'package:flutter/widgets.dart';
 
 class MLocalizations {
 
-  String get promptEmail => "Email";
+  String get promptEmail => "E-Mail";
 
-  String get hintEmail => "Enter your email";
+  String get hintEmail => "Geben Sie Ihre E-Mail ein";
 
-  String get errorInvalidEmail => "This email address is invalid";
+  String get errorInvalidEmail => "Die E-Mail-Adresse ist ungültig";
 
-  String get errorInvalidPassword => "This password is too short";
+  String get errorInvalidPassword => "Das Passwort ist zu kurz";
 
-  String get promptPassword => "Password";
+  String get promptPassword => "Passwort";
 
-  String get hintPassword => "Enter your password";
+  String get hintPassword => "Geben Sie Ihr Passwort ein";
 
-  String get errorIncorrectPassword => "The password is incorrect";
+  String get errorIncorrectPassword => "E-Mail oder Passwort ungültig";
 
   String get startMeasurement => "Messung starten";
   
@@ -52,9 +52,9 @@ class MLocalizations {
 
   String get titleArea => "Fläche";
 
-  String get comments => "Comments";
+  String get comments => "Kommentare";
   
-  String get comment => "Comment";
+  String get comment => "Kommentar";
 
   String get route => "Route";
 
