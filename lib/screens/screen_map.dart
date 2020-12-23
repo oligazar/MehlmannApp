@@ -196,8 +196,6 @@ class ViewMapState extends State<ViewMap> {
                                                         BtnsMode.createSentence
                                                     ? Icons.add
                                                     : Icons.edit,
-                                                // ? loc.createSentence
-                                                // : loc.selectSentence,
                                               )
                                             : Container();
                                       }),
