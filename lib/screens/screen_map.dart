@@ -214,38 +214,21 @@ class ViewMapState extends State<ViewMap> {
                                       icon: Icons.power_settings_new),
                                 ],
                               ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
+                              Flexible(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                  child: mode == BtnsMode.search
+                                      ? SearchBox(
+                                          onSubmitted:
+                                              _bloc.onFieldsQuerySubmitted,
+                                          onChanged: _bloc.onFieldsQueryChanged,
+                                          // child: ,
+                                        )
+                                      : Container(),
                                 ),
-                                child: mode == BtnsMode.search
-                                    ? SearchBox(
-                                        onSubmitted:
-                                            _bloc.onFieldsQuerySubmitted,
-                                        onChanged: _bloc.onFieldsQueryChanged,
-                                        child: StreamBuilder<List<Field>>(
-                                          stream: _bloc.searchedFieldSuggestions,
-                                          builder: (context, snapshot) {
-                                            final fields = snapshot.data ?? [];
-                                            return SingleChildScrollView(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  for (Field field in fields)
-                                                    SearchSuggestionItem(
-                                                      field: field,
-                                                      onSelected: _bloc
-                                                          .onSuggestionFieldClick,
-                                                    )
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      )
-                                    : Container(),
                               ),
                             ],
                           );

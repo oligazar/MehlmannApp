@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mahlmann_app/blocs/bloc_map.dart';
 import 'package:mahlmann_app/common/extensions.dart';
+import 'package:mahlmann_app/models/built_value/field.dart';
+import 'package:mahlmann_app/screens/screen_map.dart';
 
 class SearchBox extends StatefulWidget {
   final ValueChanged<String> onSubmitted;
@@ -32,6 +35,8 @@ class _SearchBoxState extends State<SearchBox> {
     _controller = TextEditingController(text: widget.initialText);
   }
 
+  BlocMap get _bloc => context.provide<BlocMap>();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -52,7 +57,28 @@ class _SearchBoxState extends State<SearchBox> {
               hintText: widget.hintText ?? context.loc.promptSearch,
             ),
           ),
-	        if (widget.child != null) widget.child
+          if (widget.child != null) widget.child,
+          Flexible(
+            child: StreamBuilder<List<Field>>(
+              stream: _bloc.searchedFieldSuggestions,
+              builder: (context, snapshot) {
+                final fields = snapshot.data ?? [];
+                return SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (Field field in fields)
+                        SearchSuggestionItem(
+                          field: field,
+                          onSelected: _bloc.onSuggestionFieldClick,
+                        )
+                    ],
+                  ),
+                );
+              },
+            ),
+          )
         ],
       ),
     );
