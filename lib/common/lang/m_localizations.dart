@@ -42,12 +42,6 @@ class MLocalizations {
 
   String get back => "Zurück";
 
-  String get btnOk => "Ok";
-
-  String get yes => "Ja";
-  
-  String get no => "Nein";
-
   String get name => "Name";
   
   String get type => "Type";
@@ -75,6 +69,12 @@ class MLocalizations {
   String get noSets => "No sets.";
 
   String get deselect => "Deaktivieren";
+
+  String get dialogTitleConfirmLogout => "Wollen Sie sich wirklich abmelden?";
+
+  String get btnOk => "Ja";
+  
+  String get btnCancel => "Nein";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

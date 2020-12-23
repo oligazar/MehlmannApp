@@ -4,12 +4,14 @@ class MButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final bool isActive;
+  final bool isEnabled;
 
   const MButton({
     Key key,
     this.icon,
     this.onPressed,
     this.isActive = true,
+    this.isEnabled = true,
   }) : super(key: key);
 
   @override
@@ -21,7 +23,7 @@ class MButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         color: Colors.white,
         child: InkWell(
-          onTap: onPressed,
+          onTap: isEnabled ? onPressed : null,
           child: Container(
             height: 48,
             width: 48,

@@ -19,6 +19,7 @@ class BlocMap extends Disposable {
   final _db = DbClient();
   final _api = ApiClient();
   final _mapData = rx.BehaviorSubject<MapData>.seeded(MapData());
+  final _isLoading = rx.BehaviorSubject<bool>.seeded(false);
   final _bounds = rx.BehaviorSubject<LatLngBounds>();
   final _measurement = rx.BehaviorSubject<double>();
   final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
@@ -33,6 +34,7 @@ class BlocMap extends Disposable {
   final _inboxFields = Set<Field>(); // red
 
   Stream<MapData> get mapData => _mapData.stream;
+  Stream<bool> get isLoading => _isLoading.stream;
 
   Stream<LatLngBounds> get bounds => _bounds.stream;
 
@@ -68,6 +70,7 @@ class BlocMap extends Disposable {
     _fieldComments.close();
     _inboxGroups.close();
     _searchedFieldSuggestions.close();
+    _isLoading.close();
   }
   
   void clearInboxFields() {
@@ -467,5 +470,17 @@ class BlocMap extends Disposable {
 
   void switchMapType() {
     _updateMapData(isSatelliteView: !_mapData.value.isSatelliteView);
+  }
+
+  Future onRefreshBtnClicked() async {
+    _isLoading.add(true);
+    final response = await _api.fetchFieldsResponse();
+  
+    await _db.insertUsers(response.users.toList());
+    await _db.insertFountains(response.fountains.toList());
+    await _db.insertFields(response.fields.toList());
+    
+    await _prepareData();
+    _isLoading.add(false);
   }
 }
