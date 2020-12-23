@@ -162,6 +162,68 @@ class ViewMapState extends State<ViewMap> {
                       : MapType.normal,
                 ),
                 SafeArea(
+                  minimum: EdgeInsets.only(bottom: 20),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        StreamBuilder<double>(
+                            stream: _bloc.measurement,
+                            builder: (context, snapshot) {
+                              final measurement = snapshot.data;
+                              if (measurement != null) {
+                                final mString =
+                                _bloc.currentMode == BtnsMode.measureArea
+                                    ? "${measurement.toStringAsFixed(2)} ha"
+                                    : "${measurement.toStringAsFixed(2)} m";
+                                return Text(mString);
+                              } else {
+                                return Container(height: 0);
+                              }
+                            }),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            MButton(
+                              onPressed: _bloc.switchMapType,
+                              icon: Icons.map,
+                              isActive: mapData?.isSatelliteView == true,
+                            ),
+                            MButton(
+                              onPressed: _goToCurrentPosition,
+                              icon: Icons.location_on,
+                            ),
+                            MButton(
+                              onPressed: _bloc.onFountainsBtnClicked,
+                              isActive: mapData?.showFountains != false,
+                              icon: Icons.invert_colors,
+                            ),
+                            mapData?.pins?.isNotEmpty == true
+                                ? MButton(
+                                onPressed: _bloc.onBackBtnClick,
+                                // text: loc.back,
+                                icon: Icons.undo)
+                                : Container(height: 0),
+                            StreamBuilder<bool>(
+                                stream: _bloc.isLoading,
+                                builder: (context, snapshot) {
+                                  final isLoading = snapshot.data == true;
+                                  return MButton(
+                                    onPressed: _bloc.onRefreshBtnClicked,
+                                    isActive: !isLoading,
+                                    isEnabled: !isLoading,
+                                    icon: Icons.refresh,
+                                  );
+                                }
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SafeArea(
                   minimum: EdgeInsets.only(top: 28),
                   child: Align(
                     alignment: Alignment.topCenter,
@@ -223,7 +285,27 @@ class ViewMapState extends State<ViewMap> {
                                           onSubmitted:
                                               _bloc.onFieldsQuerySubmitted,
                                           onChanged: _bloc.onFieldsQueryChanged,
-                                          // child: ,
+                                          child: Flexible(
+                                            child: StreamBuilder<List<Field>>(
+                                              stream: _bloc.searchedFieldSuggestions,
+                                              builder: (context, snapshot) {
+                                                final fields = snapshot.data ?? [];
+                                                return SingleChildScrollView(
+                                                  child: Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      for (Field field in fields)
+                                                        SearchSuggestionItem(
+                                                          field: field,
+                                                          onSelected: _bloc.onSuggestionFieldClick,
+                                                        )
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
                                         )
                                       : Container(),
                                 ),
@@ -231,68 +313,6 @@ class ViewMapState extends State<ViewMap> {
                             ],
                           );
                         }),
-                  ),
-                ),
-                SafeArea(
-                  minimum: EdgeInsets.only(bottom: 20),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        StreamBuilder<double>(
-                            stream: _bloc.measurement,
-                            builder: (context, snapshot) {
-                              final measurement = snapshot.data;
-                              if (measurement != null) {
-                                final mString =
-                                    _bloc.currentMode == BtnsMode.measureArea
-                                        ? "${measurement.toStringAsFixed(2)} ha"
-                                        : "${measurement.toStringAsFixed(2)} m";
-                                return Text(mString);
-                              } else {
-                                return Container(height: 0);
-                              }
-                            }),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            MButton(
-                              onPressed: _bloc.switchMapType,
-                              icon: Icons.map,
-                              isActive: mapData?.isSatelliteView == true,
-                            ),
-                            MButton(
-                              onPressed: _goToCurrentPosition,
-                              icon: Icons.location_on,
-                            ),
-                            MButton(
-                              onPressed: _bloc.onFountainsBtnClicked,
-                              isActive: mapData?.showFountains != false,
-                              icon: Icons.invert_colors,
-                            ),
-                            mapData?.pins?.isNotEmpty == true
-                                ? MButton(
-                                    onPressed: _bloc.onBackBtnClick,
-                                    // text: loc.back,
-                                    icon: Icons.undo)
-                                : Container(height: 0),
-                            StreamBuilder<bool>(
-                              stream: _bloc.isLoading,
-                              builder: (context, snapshot) {
-                                final isLoading = snapshot.data == true;
-                                return MButton(
-                                  onPressed: _bloc.onRefreshBtnClicked,
-                                  isActive: !isLoading,
-                                  isEnabled: !isLoading,
-                                  icon: Icons.refresh,
-                                );
-                              }
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
                   ),
                 ),
                 StreamBuilder<bool>(

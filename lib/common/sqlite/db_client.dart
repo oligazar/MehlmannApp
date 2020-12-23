@@ -96,7 +96,7 @@ class DbClient {
     final whereIn = _makeWhereIn(argsCol, args);
     final whereLike = _makeWhereLike(queryCol, query);
     final where = _makeWhere([whereIn, whereLike]);
-    final totalArgs = List<String>();
+    final totalArgs = <String>[];
     args?.forEach((arg) {
       if (arg != null) {
         totalArgs.add(arg.toString());
@@ -238,7 +238,7 @@ class DbClient {
       query != null && col != null ? "$col LIKE '%' || ? || '%'" : null;
 
   String _makeWhere(List<String> statements) {
-    final results = List<String>();
+    final results = <String>[];
     statements.forEach((s) {
       if (s != null) results.add(s);
     });
