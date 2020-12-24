@@ -525,6 +525,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.4.0"
+  post_frame_image_builder:
+    dependency: "direct dev"
+    description:
+      path: "/Users/Admin/Development/flutter/my_plugins/post_frame_image_builder"
+      relative: false
+    source: path
+    version: "0.0.1"
   process:
     dependency: transitive
     description:

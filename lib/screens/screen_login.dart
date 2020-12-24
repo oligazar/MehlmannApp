@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_login.dart';
+import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/functions.dart';
+import 'package:mahlmann_app/common/lang/m_localizations.dart';
 import 'package:mahlmann_app/models/response_wrapper.dart';
 import 'package:mahlmann_app/models/login_response.dart';
+import 'package:mahlmann_app/widgets/preference_radio_list.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:mahlmann_app/common/field_validator.dart';
@@ -32,6 +35,7 @@ class _ViewLoginState extends State<ViewLogin> {
   bool _obscureText = true;
 
   BlocLogin get _bloc => context.provide<BlocLogin>();
+  MLocalizations get _loc => context.loc;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +58,13 @@ class _ViewLoginState extends State<ViewLogin> {
                             : AutovalidateMode.disabled,
                         child: _formUI(),
                       ),
+                      StreamBuilder<bool>(
+                        stream: _bloc.showBackendSettings,
+                        builder: (context, snapshot) {
+                          final shouldShow = snapshot.data == true;
+                          return shouldShow ? _backendSetting() : Container();
+                        }
+                      ),
                       const SizedBox(height: 20),
                       _progressIndication(result),
                       const SizedBox(height: 20),
@@ -75,8 +86,6 @@ class _ViewLoginState extends State<ViewLogin> {
   Widget _formUI() {
     final _bloc = context.provide<BlocLogin>();
     final _loc = context.loc;
-//     final _loc = TLocalizations.of(context);
-    print('email: ${_bloc.email}');
     return Column(
       children: <Widget>[
         TextFormField(
@@ -86,6 +95,9 @@ class _ViewLoginState extends State<ViewLogin> {
           ),
           keyboardType: TextInputType.emailAddress,
           validator: _loc.errorInvalidEmail.ifInvalidEmail,
+          onChanged: (String val) {
+            _bloc.email = val;
+          },
           onSaved: (String val) {
             _bloc.email = val;
           },
@@ -117,10 +129,9 @@ class _ViewLoginState extends State<ViewLogin> {
   }
 
   InputDecoration get _passwordDecoration {
-    final loc = context.loc;
     return InputDecoration(
-      labelText: loc.promptPassword,
-      hintText: loc.hintPassword,
+      labelText: _loc.promptPassword,
+      hintText: _loc.hintPassword,
       suffixIcon: IconButton(
           icon: Icon(
             _obscureText ? Icons.visibility : Icons.visibility_off,
@@ -177,5 +188,34 @@ class _ViewLoginState extends State<ViewLogin> {
         _autoValidate = true;
       });
     }
+  }
+
+  Widget _backendSetting() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(width: 1, color: Colors.grey),
+          bottom: BorderSide(width: 1, color: Colors.grey),
+        ),
+      ),
+      child: PreferenceRadioList<String>(
+        title: _loc.titleBackend,
+        subTitle: _loc.summBackend,
+        icon: Icons.http,
+        prefKey: PREF_BACKEND,
+        dialogTitle: _loc.summBackend,
+        items: [
+          PrefRadioItem(value: STAG, titleMaker: () => _loc.staging),
+          PrefRadioItem(
+              value: PROD, titleMaker: () => _loc.production),
+        ],
+        onSelected: (item) {
+          print('on Changed: ${item.value}');
+          baseAuthority = item.value == PROD
+              ? AUTHORITY_PRODUCTION
+              : AUTHORITY_STAGING;
+        },
+      ),
+    );
   }
 }

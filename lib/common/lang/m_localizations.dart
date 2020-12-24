@@ -75,6 +75,14 @@ class MLocalizations {
   String get btnOk => "Ja";
   
   String get btnCancel => "Nein";
+
+  String get titleBackend => "Server";
+
+  String get summBackend => "Server auswählen.";
+
+  String get staging => "Staging";
+
+  String get production => "Herstellung";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

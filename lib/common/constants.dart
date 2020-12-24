@@ -1,9 +1,20 @@
+// prod: https://mm.maehlmann-gemuesebau.de/de
+// stg: https://mmg.webapp.is/de
+//
+// Admin: admin@mahlmann.com / password
+// Driver: driver1@mahlmann.com / password
+
+
+const String STAG = 'stag';
+const String PROD = 'prod';
+
+const AUTHORITY_PRODUCTION = "mm.maehlmann-gemuesebau.de"; // production
+const AUTHORITY_STAGING = "mmg.webapp.is";
+// staging
+const TEST_PREFIX = "test."; // staging
 
 const int RECEIVE_TIMEOUT = 20 * 1000;
 const int SEND_TIMEOUT = 20 * 1000;
-
-const AUTHORITY_STAGING = "mm.maehlmann-gemuesebau.de"; // staging
-const AUTHORITY_PRODUCTION = "mm.maehlmann-gemuesebau.de"; // production
 
 // Widget keys
 const String LOGIN_BTN = 'loginBtn';
@@ -31,4 +42,5 @@ const String COL_AREA_SIZE = 'area_size';
 const String COL_SAVE_TIME = 'save_time';
 const String COL_IS_CABBAGE = 'is_cabbage';
 const String COL_COORDINATES = 'coordinates';
+const PREF_BACKEND = "prefBackend";
 

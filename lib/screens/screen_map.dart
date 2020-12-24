@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_map.dart';
+import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/functions.dart';
+import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
 import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/common/prefs.dart';
@@ -27,16 +30,71 @@ import 'package:mahlmann_app/widgets/search_box.dart';
 import 'package:mahlmann_app/widgets/dialogs/select_sentence_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
+import 'package:post_frame_image_builder/post_frame_image_builder.dart';
+import 'package:rxdart/rxdart.dart' as rx;
+
+class BlocMarkers extends Disposable {
+  final _models = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
+  final _bitmaps = rx.BehaviorSubject<Map<String, Uint8List>>.seeded({});
+  final _labels = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
+
+  Stream<List<ModelMarker>> get labels => _labels.stream;
+
+  BlocMarkers() {
+    rx.Rx.combineLatest([
+      _models,
+      _bitmaps,
+    ], (streams) => streams).listen((s) {
+      final List<ModelMarker> models = s[0] ?? [];
+      final Map<String, Uint8List> bitmaps = s[1] ?? {};
+
+      models?.forEach((model) {
+        final bitmap = bitmaps[model.id];
+        model.icon = bitmap != null
+            ? BitmapDescriptor.fromBytes(bitmap)
+            : model.hue != null
+                ? BitmapDescriptor.defaultMarkerWithHue(model.hue)
+                : BitmapDescriptor.defaultMarker;
+      });
+
+      _labels.add(models);
+    });
+  }
+
+  set bitmaps(Map<String, Uint8List> bitmaps) {
+    _bitmaps.add(bitmaps);
+  }
+
+  set models(Iterable<ModelMarker> models) {
+    _models.add(models.toList());
+  }
+
+  @override
+  void dispose() {
+    _models.close();
+    _bitmaps.close();
+    _labels.close();
+  }
+}
 
 // drawing custom marker on the field: https://github.com/flutter/flutter/issues/26109
 class ScreenMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Provider<BlocMap>(
-      create: (context) => BlocMap(),
-      dispose: (context, value) => value.dispose(),
+    return MultiProvider(
+      providers: [
+        Provider<BlocMap>(
+          create: (context) => BlocMap(),
+          dispose: (context, value) => value.dispose(),
+          lazy: false,
+        ),
+        Provider<BlocMarkers>(
+          create: (context) => BlocMarkers(),
+          dispose: (context, value) => value.dispose(),
+          lazy: false,
+        ),
+      ],
       child: ViewMap(),
-      lazy: false,
     );
   }
 }
@@ -67,7 +125,9 @@ class ViewMapState extends State<ViewMap> {
     zoom: 14.4746,
   );
 
-  BlocMap get _bloc => context.provide<BlocMap>();
+  BlocMap get _blocMap => context.provide<BlocMap>();
+
+  BlocMarkers get _blocMarkers => context.provide<BlocMarkers>();
 
   MLocalizations get _loc => context.loc;
 
@@ -82,14 +142,14 @@ class ViewMapState extends State<ViewMap> {
     ).then((bitmap) {
       iconDrop = bitmap;
     });
-    _fieldInfoSubscription = _bloc.fieldInfo.listen((field) async {
+    _fieldInfoSubscription = _blocMap.fieldInfo.listen((field) async {
       if (field != null) {
         await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) => MDialog(
             child: StreamBuilder<List<Comment>>(
-                stream: _bloc.fieldComments,
+                stream: _blocMap.fieldComments,
                 builder: (context, snapshot) {
                   final comments = snapshot.data ?? [];
                   return Column(
@@ -125,7 +185,7 @@ class ViewMapState extends State<ViewMap> {
                         hint: _loc.comment,
                         onSubmitted: (comment) {
                           // clear text field ???
-                          _bloc.onSubmitComment(field.id, comment);
+                          _blocMap.onSubmitComment(field.id, comment);
                         },
                       ),
                     ],
@@ -142,193 +202,273 @@ class ViewMapState extends State<ViewMap> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: StreamBuilder<MapData>(
-          stream: _bloc.mapData,
-          builder: (context, snapshot) {
-            final mapData = snapshot?.data;
-            return Stack(
-              children: [
-                GoogleMap(
-                  zoomControlsEnabled: false,
-                  myLocationButtonEnabled: false,
-                  polygons: mapData?.polygons,
-                  polylines: mapData?.polylines,
-                  markers: _buildAllMarkers(mapData),
-                  initialCameraPosition: _kGooglePlex,
-                  onMapCreated: _onMapCreated,
-                  onTap: _bloc.onMapTap,
-                  mapType: mapData?.isSatelliteView == true
-                      ? MapType.satellite
-                      : MapType.normal,
-                ),
-                SafeArea(
-                  minimum: EdgeInsets.only(bottom: 20),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        StreamBuilder<double>(
-                            stream: _bloc.measurement,
-                            builder: (context, snapshot) {
-                              final measurement = snapshot.data;
-                              if (measurement != null) {
-                                final mString =
-                                _bloc.currentMode == BtnsMode.measureArea
-                                    ? "${measurement.toStringAsFixed(2)} ha"
-                                    : "${measurement.toStringAsFixed(2)} m";
-                                return Text(mString);
-                              } else {
-                                return Container(height: 0);
-                              }
-                            }),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+      body: Stack(
+        children: [
+          StreamBuilder<MapData>(
+              stream: _blocMap.mapData,
+              builder: (context, snapshot) {
+                final mapData = snapshot?.data;
+                final labelModels = mapData?.labels ?? <ModelMarker>{};
+                _blocMarkers.models = labelModels;
+                return Stack(
+                  children: [
+                    PostFrameImageBuilder<ModelMarker>(
+                      modelsMap: _mapModels(labelModels),
+                      widgetBuilder: (model) => model.toLabelMarker(),
+                      builder: (_, bitmaps) {
+                        _blocMarkers.bitmaps = bitmaps;
+                        return Container();
+                      },
+                    ),
+                    StreamBuilder<List<ModelMarker>>(
+                        stream: _blocMarkers.labels,
+                        builder: (context, snapshot) {
+                          final labels = snapshot.data ?? [];
+                          return GoogleMap(
+                            zoomControlsEnabled: false,
+                            myLocationButtonEnabled: false,
+                            polygons: mapData?.polygons,
+                            polylines: mapData?.polylines,
+                            markers: [
+                              if (mapData?.showFountains != false &&
+                                  mapData?.fountains?.isNotEmpty == true)
+                                ..._buildMarkers(mapData.fountains),
+                              if (mapData?.pins?.isNotEmpty == true)
+                                ..._buildMarkers(mapData.pins,
+                                    isFountain: false),
+                              if (mapData?.currentPosition != null)
+                                ..._buildMarkers([mapData.currentPosition],
+                                    isFountain: false),
+                              if (mapData?.showLabels != false &&
+                                  labels != null)
+                                ..._buildMarkers(labels, isFountain: false),
+                            ].toSet(),
+                            initialCameraPosition: _kGooglePlex,
+                            onMapCreated: _onMapCreated,
+                            onTap: _blocMap.onMapTap,
+                            mapType: mapData?.isSatelliteView == true
+                                ? MapType.satellite
+                                : MapType.normal,
+                          );
+                        }),
+                    SafeArea(
+                      minimum: EdgeInsets.only(bottom: 20),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            MButton(
-                              onPressed: _bloc.switchMapType,
-                              icon: Icons.map,
-                              isActive: mapData?.isSatelliteView == true,
-                            ),
-                            MButton(
-                              onPressed: _goToCurrentPosition,
-                              icon: Icons.location_on,
-                            ),
-                            MButton(
-                              onPressed: _bloc.onFountainsBtnClicked,
-                              isActive: mapData?.showFountains != false,
-                              icon: Icons.invert_colors,
-                            ),
-                            mapData?.pins?.isNotEmpty == true
-                                ? MButton(
-                                onPressed: _bloc.onBackBtnClick,
-                                // text: loc.back,
-                                icon: Icons.undo)
-                                : Container(height: 0),
-                            StreamBuilder<bool>(
-                                stream: _bloc.isLoading,
+                            StreamBuilder<double>(
+                                stream: _blocMap.measurement,
                                 builder: (context, snapshot) {
-                                  final isLoading = snapshot.data == true;
-                                  return MButton(
-                                    onPressed: _bloc.onRefreshBtnClicked,
-                                    isActive: !isLoading,
-                                    isEnabled: !isLoading,
-                                    icon: Icons.refresh,
-                                  );
-                                }
+                                  final measurement = snapshot.data;
+                                  if (measurement != null) {
+                                    final mString = _blocMap.currentMode ==
+                                            BtnsMode.measureArea
+                                        ? "${measurement.toStringAsFixed(2)} ha"
+                                        : "${measurement.toStringAsFixed(2)} m";
+                                    return Text(mString);
+                                  } else {
+                                    return Container(height: 0);
+                                  }
+                                }),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                MButton(
+                                  onPressed: _blocMap.switchMapType,
+                                  icon: Icons.map,
+                                  isActive: mapData?.isSatelliteView == true,
+                                ),
+                                MButton(
+                                  onPressed: _goToCurrentPosition,
+                                  icon: Icons.location_on,
+                                ),
+                                MButton(
+                                  onPressed: _blocMap.onFountainsBtnClicked,
+                                  isActive: mapData?.showFountains != false,
+                                  icon: Icons.invert_colors,
+                                ),
+                                // MButton(
+                                //   onPressed: _blocMap.onLabelsBtnClicked,
+                                //   isActive: mapData?.showLabels != false,
+                                //   icon: Icons.local_offer,
+                                // ),
+                                mapData?.pins?.isNotEmpty == true
+                                    ? MButton(
+                                        onPressed: _blocMap.onBackBtnClick,
+                                        // text: loc.back,
+                                        icon: Icons.undo)
+                                    : Container(height: 0),
+                                StreamBuilder<bool>(
+                                    stream: _blocMap.isLoading,
+                                    builder: (context, snapshot) {
+                                      final isLoading = snapshot.data == true;
+                                      return MButton(
+                                        onPressed: _blocMap.onRefreshBtnClicked,
+                                        isActive: !isLoading,
+                                        isEnabled: !isLoading,
+                                        icon: Icons.refresh,
+                                      );
+                                    }),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                SafeArea(
-                  minimum: EdgeInsets.only(top: 28),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: StreamBuilder<BtnsMode>(
-                        stream: _bloc.mode,
-                        builder: (context, snapshot) {
-                          final mode = snapshot.data;
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                    SafeArea(
+                      minimum: EdgeInsets.only(top: 28),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: StreamBuilder<BtnsMode>(
+                            stream: _blocMap.mode,
+                            builder: (context, snapshot) {
+                              final mode = snapshot.data;
+                              return Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  MButton(
-                                    onPressed: _bloc.onMeasurementClick,
-                                    icon: mode == BtnsMode.measureDistance
-                                        ? Icons.straighten
-                                        : Icons.square_foot,
-                                    isActive: mode == BtnsMode.measureArea ||
-                                        mode == BtnsMode.measureDistance,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      MButton(
+                                        onPressed: _blocMap.onMeasurementClick,
+                                        icon: mode == BtnsMode.measureDistance
+                                            ? Icons.straighten
+                                            : Icons.square_foot,
+                                        isActive: mode ==
+                                                BtnsMode.measureArea ||
+                                            mode == BtnsMode.measureDistance,
+                                      ),
+                                      FutureBuilder<bool>(
+                                          future: Prefs.getLoginResponse()
+                                              .then((r) => r.admin),
+                                          builder: (context, snapshot) {
+                                            final isAdmin =
+                                                snapshot.data == true;
+                                            return isAdmin &&
+                                                    _blocMap.hasFieldInfo
+                                                ? MButton(
+                                                    onPressed:
+                                                        _onSentenceBtnClick,
+                                                    icon: mode ==
+                                                            BtnsMode
+                                                                .createSentence
+                                                        ? Icons
+                                                            .location_searching
+                                                        : Icons.edit,
+                                                  )
+                                                : Container();
+                                          }),
+                                      MButton(
+                                        onPressed:
+                                            _blocMap.onSearchFieldBtnClick,
+                                        icon: Icons.search,
+                                        isActive: mode != BtnsMode.search,
+                                      ),
+                                      MButton(
+                                          onPressed: _onSentenceInboxClick,
+                                          icon: Icons.move_to_inbox),
+                                      MButton(
+                                          onPressed: _logOut,
+                                          icon: Icons.power_settings_new),
+                                    ],
                                   ),
-                                  FutureBuilder<bool>(
-                                      future: Prefs.getLoginResponse()
-                                          .then((r) => r.admin),
-                                      builder: (context, snapshot) {
-                                        final isAdmin = snapshot.data == true;
-                                        return isAdmin && _bloc.hasFieldInfo
-                                            ? MButton(
-                                                onPressed: _onSentenceBtnClick,
-                                                icon: mode ==
-                                                        BtnsMode.createSentence
-                                                    ? Icons.add
-                                                    : Icons.edit,
-                                              )
-                                            : Container();
-                                      }),
-                                  MButton(
-                                    onPressed: _bloc.onSearchFieldBtnClick,
-                                    icon: Icons.search,
-                                    isActive: mode != BtnsMode.search,
+                                  Flexible(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 16,
+                                      ),
+                                      child: mode == BtnsMode.search
+                                          ? SearchBox(
+                                              onSubmitted: _blocMap
+                                                  .onFieldsQuerySubmitted,
+                                              onChanged:
+                                                  _blocMap.onFieldsQueryChanged,
+                                              child: Flexible(
+                                                child:
+                                                    StreamBuilder<List<Field>>(
+                                                  stream: _blocMap
+                                                      .searchedFieldSuggestions,
+                                                  builder: (context, snapshot) {
+                                                    final fields =
+                                                        snapshot.data ?? [];
+                                                    return SingleChildScrollView(
+                                                      child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          for (Field field
+                                                              in fields)
+                                                            SearchSuggestionItem(
+                                                              field: field,
+                                                              onSelected: _blocMap
+                                                                  .onSuggestionFieldClick,
+                                                            )
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            )
+                                          : Container(),
+                                    ),
                                   ),
-                                  MButton(
-                                      onPressed: _onSentenceInboxClick,
-                                      icon: Icons.move_to_inbox),
-                                  MButton(
-                                      onPressed: _logOut,
-                                      icon: Icons.power_settings_new),
                                 ],
-                              ),
-                              Flexible(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 16,
-                                  ),
-                                  child: mode == BtnsMode.search
-                                      ? SearchBox(
-                                          onSubmitted:
-                                              _bloc.onFieldsQuerySubmitted,
-                                          onChanged: _bloc.onFieldsQueryChanged,
-                                          child: Flexible(
-                                            child: StreamBuilder<List<Field>>(
-                                              stream: _bloc.searchedFieldSuggestions,
-                                              builder: (context, snapshot) {
-                                                final fields = snapshot.data ?? [];
-                                                return SingleChildScrollView(
-                                                  child: Column(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      for (Field field in fields)
-                                                        SearchSuggestionItem(
-                                                          field: field,
-                                                          onSelected: _bloc.onSuggestionFieldClick,
-                                                        )
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        )
-                                      : Container(),
-                                ),
-                              ),
-                            ],
-                          );
+                              );
+                            }),
+                      ),
+                    ),
+                    StreamBuilder<bool>(
+                        stream: _blocMap.isLoading,
+                        builder: (context, snapshot) {
+                          final isLoading = snapshot.data == true;
+                          return isLoading
+                              ? Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: MProgressIndicator(),
+                                )
+                              : Container();
                         }),
-                  ),
-                ),
-                StreamBuilder<bool>(
-                  stream: _bloc.isLoading,
-                  builder: (context, snapshot) {
-                    final isLoading = snapshot.data == true;
-                    return isLoading ? Align(
-                      alignment: Alignment.bottomCenter,
-                      child: MProgressIndicator(),
-                    ) : Container();
-                  }
-                )
-              ],
-            );
-          }),
+                    Positioned(
+                      right: 24,
+                      bottom: 24,
+                      child: FutureBuilder(
+                        future: _backendReminder(),
+                        builder: (c, snapshot) {
+                          final isProd = snapshot.data;
+                          final style = TextStyle(
+                            color: Colors.blueAccent
+                          );
+                          return isProd == null
+                              ? Container()
+                              : isProd
+                                  ? Text("P", style: style)
+                                  : Text("S", style: style);
+                        },
+                      ),
+                    )
+                  ],
+                );
+              }),
+        ],
+      ),
     );
+  }
+  
+  Future<bool> _backendReminder() async {
+    final email = await Prefs.getLoginResponse().then((r) => r.email ?? "");
+    if (email.startsWith(TEST_PREFIX)) {
+      return Prefs.isProdPref;
+    } else {
+      return null;
+    }
   }
 
   @override
@@ -343,7 +483,7 @@ class ViewMapState extends State<ViewMap> {
     if (!_controller.isCompleted) {
       _controller.complete(controller);
     }
-    _mapDataSubscription = _bloc.bounds.listen((data) async {
+    _mapDataSubscription = _blocMap.bounds.listen((data) async {
       if (data != null) {
         await _zoomFitBounds(data);
       }
@@ -351,13 +491,12 @@ class ViewMapState extends State<ViewMap> {
   }
 
   Future<void> _goToCurrentPosition() async {
-    // TODO: handle permissions before trying this !!!
     final location = await currentLocation;
     if (location != null) {
       final GoogleMapController controller = await _controller.future;
       controller.animateCamera(CameraUpdate.newLatLngZoom(location, 12.8));
       // controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
-      _bloc.markCurrentPosition(location);
+      _blocMap.markCurrentPosition(location);
     }
   }
 
@@ -367,18 +506,7 @@ class ViewMapState extends State<ViewMap> {
     });
   }
 
-  Set<Marker> _buildAllMarkers(MapData data) {
-    final markers = Set<Marker>();
-    if (data?.showFountains != false && data?.fountains?.isNotEmpty == true)
-      markers.addAll(_buildMarkers(data.fountains));
-    if (data?.pins?.isNotEmpty == true)
-      markers.addAll(_buildMarkers(data.pins, isFountain: false));
-    if (data?.currentPosition != null)
-      markers.addAll(_buildMarkers([data.currentPosition], isFountain: false));
-    return markers;
-  }
-
-  Set<Marker> _buildMarkers(
+  Iterable<Marker> _buildMarkers(
     Iterable<ModelMarker> models, {
     bool isFountain = true,
   }) {
@@ -428,11 +556,13 @@ class ViewMapState extends State<ViewMap> {
             },
             icon: isFountain
                 ? iconDrop
-                : BitmapDescriptor.defaultMarkerWithHue(
-                    BitmapDescriptor.hueRed),
+                : model.icon != null
+                    ? model.icon
+                    : BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueRed),
           );
-        })?.toSet() ??
-        Set<Marker>();
+        }) ??
+        <Marker>[];
     return markers;
   }
 
@@ -444,7 +574,7 @@ class ViewMapState extends State<ViewMap> {
     }
   }
 
-  Future  _logOut({bool shouldShowDialog = true}) async {
+  Future _logOut({bool shouldShowDialog = true}) async {
     bool shouldLogout;
     if (shouldShowDialog) {
       shouldLogout = await showDialog(
@@ -467,8 +597,8 @@ class ViewMapState extends State<ViewMap> {
   }
 
   void _onSentenceBtnClick() async {
-    if (_bloc.currentMode == BtnsMode.createSentence) {
-      _bloc.onSelectSentenceClick();
+    if (_blocMap.currentMode == BtnsMode.createSentence) {
+      _blocMap.onSelectSentenceClick();
       final sentenceName = await showDialog(
         context: context,
         barrierDismissible: false,
@@ -478,24 +608,31 @@ class ViewMapState extends State<ViewMap> {
       );
       // shouldn't be there _fieldsGroup check first?
       if (sentenceName != null) {
-        await _bloc.onSendSentence(sentenceName);
+        await _blocMap.onSendSentence(sentenceName);
         context.showSnackBar(Text(_loc.msgSuccess));
       }
     } else {
-      _bloc.onSelectSentenceClick();
+      _blocMap.onSelectSentenceClick();
     }
   }
 
   void _onSentenceInboxClick() {
-    _bloc.onSentenceInboxClick();
+    _blocMap.onSentenceInboxClick();
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) => Provider.value(
-        value: _bloc,
+        value: _blocMap,
         builder: (context, _) => SentenceInboxDialog(),
       ),
     );
+  }
+
+  Map<String, ModelMarker> _mapModels(Iterable<ModelMarker> models) {
+    if (models == null) return <String, ModelMarker>{};
+    print("mrk.MapScreen2._markerWidgets, models: $models");
+    final entries = models.map((model) => MapEntry(model.id, model));
+    return Map.fromEntries(entries);
   }
 }
 

@@ -1,6 +1,8 @@
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mahlmann_app/common/api/api_base.dart';
+import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/screens/screen_login.dart';
 import 'package:mahlmann_app/screens/screen_map.dart';
@@ -79,6 +81,8 @@ class _AppMahlmannState extends State<AppMahlmann> {
   }
 
   Future<void> _initAsync() async {
+    final isProd = await Prefs.isProdPref;
+    baseAuthority = isProd ? AUTHORITY_PRODUCTION : AUTHORITY_STAGING;
     setIsAuthorized(await Prefs.isAuthorized);
   }
 }

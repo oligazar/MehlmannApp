@@ -208,6 +208,10 @@ class BlocMap extends Disposable {
     _updateMapData(showFountains: !_mapData.value.showFountains);
   }
 
+  void onLabelsBtnClicked() {
+    _updateMapData(showLabels: !_mapData.value.showLabels);
+  }
+
   void onBackBtnClick() {
     _points.removeLast();
     _measurement.add(_calculateMeasurement());
@@ -294,9 +298,11 @@ class BlocMap extends Disposable {
   void _updateMapData({
     Set<ModelMarker> fountains,
     Set<ModelMarker> pins,
+    Set<ModelMarker> labels,
     Set<Polygon> polygons,
     Set<Polyline> polylines,
     bool showFountains,
+    bool showLabels,
     bool isSatelliteView,
     ModelMarker currentPosition,
   }) {
@@ -305,18 +311,22 @@ class BlocMap extends Disposable {
         ? mapData.copyWith(
             fountains: fountains ?? mapData.fountains,
             pins: pins ?? mapData.pins,
+            labels: labels ?? mapData.labels,
             polygons: polygons ?? mapData.polygons,
             polylines: polylines ?? mapData.polylines,
             showFountains: showFountains ?? mapData.showFountains,
+            showLabels: showLabels ?? mapData.showLabels,
             isSatelliteView: isSatelliteView ?? mapData.isSatelliteView,
             currentPosition: currentPosition ?? mapData.currentPosition,
           )
         : MapData(
             fountains: fountains,
             pins: pins,
+            labels: labels,
             polygons: polygons,
             polylines: polylines,
             showFountains: showFountains,
+            showLabels: showLabels,
             isSatelliteView: isSatelliteView,
             currentPosition: currentPosition,
           );
@@ -339,6 +349,23 @@ class BlocMap extends Disposable {
     });
   }
 
+  Iterable<ModelMarker> _createLabelsMarkers(
+      List<Field> fields, {
+        String id,
+      }) {
+    return [
+      for (Field f in fields)
+        if (f.coordinates.firstOrNull != null) ModelMarker(
+        id: id ?? "markerId-${f.coordinates.firstOrNull.latitude}-${f.coordinates.firstOrNull.longitude}",
+        title: f.name,
+        subTitle: "${f.areaSize}",
+        latLng: LatLng(f.coordinates.firstOrNull.latitude, f.coordinates.firstOrNull.longitude),
+        hue: BitmapDescriptor.hueBlue,
+        // color: f.name,
+      )
+    ].toSet();
+  }
+
   LatLngBounds _createBounds(List<LatLng> points) {
     if (points?.isEmpty == true) return null;
     final southwestLat = points.map((p) => p.latitude).reduce(
@@ -359,6 +386,7 @@ class BlocMap extends Disposable {
   Future _prepareData() async {
     final fields = await _db.queryFields();
     _fields.addAll(fields ?? []);
+    // final labels = _createLabelsMarkers(fields);
     final polygons = _createPolygons();
     final fountains = await _db.queryFountains();
 
@@ -368,6 +396,7 @@ class BlocMap extends Disposable {
     _updateMapData(
       fountains: markers,
       polygons: polygons,
+      // labels: labels,
     );
     _updateBounds(_fields);
   }

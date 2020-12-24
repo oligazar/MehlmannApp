@@ -4,6 +4,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Prefs {
 	
+	static Future<bool> get isProdPref async {
+		final pref = await sp;
+		final backend = pref.getString(PREF_BACKEND);
+		
+		if (backend != null) {
+			return backend == PROD;
+		} else {
+			pref.setString(PREF_BACKEND, PROD);
+			return true;
+		}
+	}
+	
 	static Future<SharedPreferences> get sp async => await SharedPreferences.getInstance();
 	
   static Future<String> get token async => sp.then((sp) => sp.getString(PREF_TOKEN));
