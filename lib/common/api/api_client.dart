@@ -27,9 +27,12 @@ class ApiClient extends ApiBase {
     );
   }
 
-  Future<FieldsResponse> fetchFieldsResponse() async {
+  Future<FieldsResponse> fetchFieldsResponse({String from}) async {
     print('fetchFieldsResponse');
-    final url = buildUri("/api/v1/fields");
+    final query = from != null ? {
+      from: from
+    } : null;
+    final url = buildUri("/api/v1/fields", query);
     final h = await headers;
 
     final response = await client.getUri(url, options: Options(headers: h));
@@ -93,44 +96,44 @@ class ApiClient extends ApiBase {
 // export const loginGet = (uid, client, token, expiry) => {
 // return get(`/auth/validate_token?uid=${uid}&client=${client}&access-token=${token}&expiry=${expiry}&token-type=Bearer&Content-Type=application/json&Accept=application/json`, true)
 // };
-  Future loginGet(String uid, String _client, String token, int expiry) async {
-    print('loginGet');
-    final params = {
-      "uid": uid,
-      "client": _client,
-      "access-token": token,
-      "expiry": expiry,
-      "token-type": "Bearer",
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    };
-    final url = buildUri("/api/v1/auth/validate_token", params);
-
-    final response =
-        await client.getUri(url, options: Options(headers: await headers));
-
-    // som kind of parsing
-    final comments = List<Comment>.from(
-        response.data.map((f) => Comment.fromMap(f)).toList());
-
-    return comments;
-  }
+//   Future loginGet(String uid, String _client, String token, int expiry) async {
+//     print('loginGet');
+//     final params = {
+//       "uid": uid,
+//       "client": _client,
+//       "access-token": token,
+//       "expiry": expiry,
+//       "token-type": "Bearer",
+//       "Content-Type": "application/json",
+//       "Accept": "application/json",
+//     };
+//     final url = buildUri("/api/v1/auth/validate_token", params);
+//
+//     final response =
+//         await client.getUri(url, options: Options(headers: await headers));
+//
+//     // som kind of parsing
+//     final comments = List<Comment>.from(
+//         response.data.map((f) => Comment.fromMap(f)).toList());
+//
+//     return comments;
+//   }
 	
 // export const createAccount = (email, password) => {
 // return post('/users', {
 // user: { email, password },
 // });
 // };
-  Future createAccount(String email, String password) async {
-    print('createAccount');
-    final url = buildUri("/api/v1/users");
-    final data = {
-      "email": email,
-      "password": password,
-    };
-
-    final response = await client.postUri(url,
-        data: json.encode(data), options: Options(headers: await headers));
-    print("response: $response");
-  }
+//   Future createAccount(String email, String password) async {
+//     print('createAccount');
+//     final url = buildUri("/api/v1/users");
+//     final data = {
+//       "email": email,
+//       "password": password,
+//     };
+//
+//     final response = await client.postUri(url,
+//         data: json.encode(data), options: Options(headers: await headers));
+//     print("response: $response");
+//   }
 }

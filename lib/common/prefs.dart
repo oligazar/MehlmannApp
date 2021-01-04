@@ -4,6 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Prefs {
 	
+  static Future<String> get lastUpdate async {
+	  final pref = await sp;
+	  return pref.getString(PREF_LAST_UPDATE);
+  }
+  
+  static Future saveLastUpdate(String timeString) async {
+	  final pref = await sp;
+	  return pref.setString(PREF_LAST_UPDATE, timeString);
+  }
+	
 	static Future<bool> get isProdPref async {
 		final pref = await sp;
 		final backend = pref.getString(PREF_BACKEND);

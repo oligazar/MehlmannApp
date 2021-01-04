@@ -134,6 +134,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.0-nullsafety.3"
+  cluster_builder:
+    dependency: "direct dev"
+    description:
+      path: "/Users/Admin/Development/flutter/my_plugins/cluster_builder"
+      relative: false
+    source: path
+    version: "0.0.1"
   code_builder:
     dependency: transitive
     description:
@@ -176,6 +183,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.3.6"
+  date_formatter_plugin:
+    dependency: "direct dev"
+    description:
+      path: "/Users/Admin/Development/flutter/my_plugins/date_formatter_plugin"
+      relative: false
+    source: path
+    version: "0.0.1"
   dio:
     dependency: "direct main"
     description:
@@ -253,6 +267,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.10.11"
+  fluster:
+    dependency: transitive
+    description:
+      name: fluster
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.2"
   flutter:
     dependency: "direct main"
     description: flutter

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/api/api_client.dart';
+import 'package:mahlmann_app/common/date_formatter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
+import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
@@ -386,7 +388,7 @@ class BlocMap extends Disposable {
   Future _prepareData() async {
     final fields = await _db.queryFields();
     _fields.addAll(fields ?? []);
-    // final labels = _createLabelsMarkers(fields);
+    final labels = _createLabelsMarkers(fields);
     final polygons = _createPolygons();
     final fountains = await _db.queryFountains();
 
@@ -396,7 +398,7 @@ class BlocMap extends Disposable {
     _updateMapData(
       fountains: markers,
       polygons: polygons,
-      // labels: labels,
+      labels: labels,
     );
     _updateBounds(_fields);
   }
@@ -503,8 +505,10 @@ class BlocMap extends Disposable {
 
   Future onRefreshBtnClicked() async {
     _isLoading.add(true);
-    final response = await _api.fetchFieldsResponse();
-  
+
+    final response = await _api.fetchFieldsResponse(from: await Prefs.lastUpdate);
+    await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
+    
     await _db.insertUsers(response.users.toList());
     await _db.insertFountains(response.fountains.toList());
     await _db.insertFields(response.fields.toList());

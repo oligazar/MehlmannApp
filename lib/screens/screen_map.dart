@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_map.dart';
+import 'package:mahlmann_app/blocs/bloc_markers.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/functions.dart';
-import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
 import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/common/prefs.dart';
@@ -31,51 +30,8 @@ import 'package:mahlmann_app/widgets/dialogs/select_sentence_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:post_frame_image_builder/post_frame_image_builder.dart';
-import 'package:rxdart/rxdart.dart' as rx;
+import 'package:cluster_builder/cluster_builder.dart';
 
-class BlocMarkers extends Disposable {
-  final _models = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
-  final _bitmaps = rx.BehaviorSubject<Map<String, Uint8List>>.seeded({});
-  final _labels = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
-
-  Stream<List<ModelMarker>> get labels => _labels.stream;
-
-  BlocMarkers() {
-    rx.Rx.combineLatest([
-      _models,
-      _bitmaps,
-    ], (streams) => streams).listen((s) {
-      final List<ModelMarker> models = s[0] ?? [];
-      final Map<String, Uint8List> bitmaps = s[1] ?? {};
-
-      models?.forEach((model) {
-        final bitmap = bitmaps[model.id];
-        model.icon = bitmap != null
-            ? BitmapDescriptor.fromBytes(bitmap)
-            : model.hue != null
-                ? BitmapDescriptor.defaultMarkerWithHue(model.hue)
-                : BitmapDescriptor.defaultMarker;
-      });
-
-      _labels.add(models);
-    });
-  }
-
-  set bitmaps(Map<String, Uint8List> bitmaps) {
-    _bitmaps.add(bitmaps);
-  }
-
-  set models(Iterable<ModelMarker> models) {
-    _models.add(models.toList());
-  }
-
-  @override
-  void dispose() {
-    _models.close();
-    _bitmaps.close();
-    _labels.close();
-  }
-}
 
 // drawing custom marker on the field: https://github.com/flutter/flutter/issues/26109
 class ScreenMap extends StatelessWidget {
@@ -209,6 +165,7 @@ class ViewMapState extends State<ViewMap> {
               builder: (context, snapshot) {
                 final mapData = snapshot?.data;
                 final labelModels = mapData?.labels ?? <ModelMarker>{};
+                final fountainModels = mapData?.fountains ?? <ModelMarker>{};
                 _blocMarkers.models = labelModels;
                 return Stack(
                   children: [
@@ -220,29 +177,41 @@ class ViewMapState extends State<ViewMap> {
                         return Container();
                       },
                     ),
-                    StreamBuilder<List<ModelMarker>>(
-                        stream: _blocMarkers.labels,
+                    StreamBuilder<double>(
+                        stream: _blocMarkers.zoomStream,
+                        builder: (context, snap) {
+                          final zoom = snap.data ?? BlocMarkers.defaultZoom;
+                          print("ms4.zoom: $zoom");
+                          return ClusterBuilder<ModelMarker>(
+                              zoom: zoom,
+                              clusterables: fountainModels?.toList() ?? [],
+                              createCluster: (cluster, lng, lat) => ModelMarker(
+                                id: cluster.id.toString(),
+                                latLng: LatLng(lat, lng),
+                                isCluster: cluster.isCluster,
+                                clusterId: cluster.id,
+                                pointsSize: cluster.pointsSize,
+                                childMarkerId: cluster.childMarkerId,
+                              ),
+                              builder: (List<ModelMarker> clusters) {
+                                _blocMarkers.clusters = clusters;
+                                return Container();
+                              });
+                        }),
+                    StreamBuilder<MarkersData>(
+                        stream: _blocMarkers.markersData,
                         builder: (context, snapshot) {
-                          final labels = snapshot.data ?? [];
+                          final labels = snapshot.data?.labels ?? [];
+                          final fountains = snapshot.data?.fountains ?? [];
                           return GoogleMap(
                             zoomControlsEnabled: false,
                             myLocationButtonEnabled: false,
                             polygons: mapData?.polygons,
                             polylines: mapData?.polylines,
-                            markers: [
-                              if (mapData?.showFountains != false &&
-                                  mapData?.fountains?.isNotEmpty == true)
-                                ..._buildMarkers(mapData.fountains),
-                              if (mapData?.pins?.isNotEmpty == true)
-                                ..._buildMarkers(mapData.pins,
-                                    isFountain: false),
-                              if (mapData?.currentPosition != null)
-                                ..._buildMarkers([mapData.currentPosition],
-                                    isFountain: false),
-                              if (mapData?.showLabels != false &&
-                                  labels != null)
-                                ..._buildMarkers(labels, isFountain: false),
-                            ].toSet(),
+                            markers: _buildAllMarkers(mapData, labels, fountains),
+                            onCameraMove: (position) {
+                              _blocMarkers.zoom = position.zoom;
+                            },
                             initialCameraPosition: _kGooglePlex,
                             onMapCreated: _onMapCreated,
                             onTap: _blocMap.onMapTap,
@@ -289,11 +258,11 @@ class ViewMapState extends State<ViewMap> {
                                   isActive: mapData?.showFountains != false,
                                   icon: Icons.invert_colors,
                                 ),
-                                // MButton(
-                                //   onPressed: _blocMap.onLabelsBtnClicked,
-                                //   isActive: mapData?.showLabels != false,
-                                //   icon: Icons.local_offer,
-                                // ),
+                                MButton(
+                                  onPressed: _blocMap.onLabelsBtnClicked,
+                                  isActive: mapData?.showLabels != false,
+                                  icon: Icons.local_offer,
+                                ),
                                 mapData?.pins?.isNotEmpty == true
                                     ? MButton(
                                         onPressed: _blocMap.onBackBtnClick,
@@ -634,6 +603,21 @@ class ViewMapState extends State<ViewMap> {
     final entries = models.map((model) => MapEntry(model.id, model));
     return Map.fromEntries(entries);
   }
+
+  Set<Marker> _buildAllMarkers(MapData mapData, List<ModelMarker> labels, List<ModelMarker> fountains) => [
+    if (mapData?.showFountains != false &&
+        fountains?.isNotEmpty == true)
+      ..._buildMarkers(fountains),
+    if (mapData?.pins?.isNotEmpty == true)
+      ..._buildMarkers(mapData.pins,
+          isFountain: false),
+    if (mapData?.currentPosition != null)
+      ..._buildMarkers([mapData.currentPosition],
+          isFountain: false),
+    if (mapData?.showLabels != false &&
+        labels != null)
+      ..._buildMarkers(labels, isFountain: false),
+  ].toSet();
 }
 
 class SearchSuggestionItem extends StatelessWidget {

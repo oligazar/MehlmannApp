@@ -1,15 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cluster_builder/cluster_builder.dart';
 
-class ModelMarker /*extends IconizedClusterable*/ {
+class ModelMarker extends IconizedClusterable {
 	final String id;
 	final String title;
 	final String subTitle;
 	final String desc;
 	final LatLng latLng;
 	final double hue;
-	// final MarkerColors color;
+	final MarkerColors color;
 	BitmapDescriptor icon;
 
 	ModelMarker({
@@ -19,13 +20,13 @@ class ModelMarker /*extends IconizedClusterable*/ {
 		this.desc,
 		@required this.latLng,
 		this.hue,
-		// this.color = MarkerColors.green,
+		this.color = MarkerColors.green,
 		this.icon,
 		isCluster = false,
 		clusterId,
 		pointsSize,
 		childMarkerId,
-	})  : assert(id != null)/*,
+	})  : assert(id != null),
 				super(
 					markerId: id,
 					latitude: latLng.latitude,
@@ -34,7 +35,7 @@ class ModelMarker /*extends IconizedClusterable*/ {
 					clusterId: clusterId,
 					pointsSize: pointsSize,
 					childMarkerId: childMarkerId,
-					equatable: CompositionEquatable([title, subTitle, desc]))*/;
+					equatable: CompositionEquatable([title, subTitle, desc]));
 
 	Marker toMarker() => Marker(
 		markerId: MarkerId(id),
@@ -139,4 +140,19 @@ class TrianglePointer extends CustomPainter {
 	bool shouldRepaint(CustomPainter oldDelegate) {
 		return true;
 	}
+}
+
+enum MarkerColors {
+	green,
+	orange,
+	red,
+	settingUp,
+	washTime,
+	travelTime,
+	workTime,
+	repairTime,
+	waitTime,
+	leave,
+	otherTime,
+	grey,
 }

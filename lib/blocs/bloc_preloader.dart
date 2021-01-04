@@ -1,5 +1,7 @@
 import 'package:mahlmann_app/common/api/api_client.dart';
+import 'package:mahlmann_app/common/date_formatter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
+import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
 
 class BlocPreloader extends Disposable {
@@ -13,7 +15,8 @@ class BlocPreloader extends Disposable {
   }
 	
 	Future<void> _fetchAndSaveFields() async {
-		final response = await _api.fetchFieldsResponse();
+		final response = await _api.fetchFieldsResponse(from: await Prefs.lastUpdate);
+  	await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
 		
 		await _db.insertUsers(response.users.toList());
 		await _db.insertFountains(response.fountains.toList());

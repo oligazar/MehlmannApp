@@ -51,6 +51,7 @@ dependencies:
 dependency_overrides:
   analyzer: ^0.41.0
   intl: ^0.17.0-nullsafety.2
+#  equitable: ^2.0.0-nullsafety.0
 
 dev_dependencies:
   flutter_test:
@@ -60,6 +61,12 @@ dev_dependencies:
 
   post_frame_image_builder:
     path: /Users/Admin/Development/flutter/my_plugins/post_frame_image_builder
+
+  cluster_builder:
+    path: /Users/Admin/Development/flutter/my_plugins/cluster_builder
+
+  date_formatter_plugin:
+    path: /Users/Admin/Development/flutter/my_plugins/date_formatter_plugin
 
 flutter:
 

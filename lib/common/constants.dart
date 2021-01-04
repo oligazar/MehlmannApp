@@ -42,5 +42,6 @@ const String COL_AREA_SIZE = 'area_size';
 const String COL_SAVE_TIME = 'save_time';
 const String COL_IS_CABBAGE = 'is_cabbage';
 const String COL_COORDINATES = 'coordinates';
-const PREF_BACKEND = "prefBackend";
+const String PREF_BACKEND = "prefBackend";
+const String PREF_LAST_UPDATE = "prefLastUpdate";
 
