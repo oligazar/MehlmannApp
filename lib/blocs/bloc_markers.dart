@@ -19,12 +19,13 @@ class BlocMarkers extends Disposable {
 	
 	// resulting data: labels + fountains/clusters
 	final _markersData = rx.BehaviorSubject<MarkersData>.seeded(MarkersData());
-	final _models = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
+	final _labelModels = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
+	final _labels = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
 	// bitmaps for labels
 	final _bitmaps = rx.BehaviorSubject<Map<String, Uint8List>>.seeded({});
-	final _labels = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
-	final _zoom = rx.BehaviorSubject<double>.seeded(thresholdZoom);
 	final _clusters = rx.BehaviorSubject<List<ModelMarker>>.seeded([]);
+	
+	final _zoom = rx.BehaviorSubject<double>.seeded(thresholdZoom);
 	
 	Stream<List<ModelMarker>> get labels => _labels.stream;
 	Stream<MarkersData> get markersData => _markersData.stream;
@@ -32,12 +33,12 @@ class BlocMarkers extends Disposable {
 	
 	BlocMarkers() {
 		rx.Rx.combineLatest([
-			_models,
+			_labelModels,
 			_clusters,
 			_bitmaps,
 			_zoom,
 		], (streams) => streams).listen((s) {
-			final List<ModelMarker> models = s[0] ?? [];
+			final List<ModelMarker> labelModels = s[0] ?? [];
 			final List<ModelMarker> clusters = s[1] ?? [];
 			final Map<String, Uint8List> bitmaps = s[2] ?? {};
 			final double zoom = s[3] ?? thresholdZoom;
@@ -47,7 +48,7 @@ class BlocMarkers extends Disposable {
 			print("zoom: $zoom");
 			
 			if (zoom > thresholdZoom) {
-				models?.forEach((model) {
+				labelModels?.forEach((model) {
 					final bitmap = bitmaps[model.id];
 					model.icon = bitmap != null
 							? BitmapDescriptor.fromBytes(bitmap)
@@ -56,15 +57,13 @@ class BlocMarkers extends Disposable {
 							: BitmapDescriptor.defaultMarker;
 				});
 				
-				labels.addAll(models);
+				labels.addAll(labelModels);
 			}
 			
 			final data = MarkersData(
 				labels: labels,
 				fountains: clusters,
 			);
-			
-			// output is markersData (labels + clusters)
 			_markersData.add(data);
 		});
 	}
@@ -72,29 +71,39 @@ class BlocMarkers extends Disposable {
 	set clusters(List<ModelMarker> clusters) {
 		final cl = clusters.length;
 		
+		final realClusters = clusters.where((c) => c.isCluster);
+		print("realClusters: $realClusters");
+		
 		print("cl: $cl, _clustersLength: $_clustersLength");
-		if (cl == _clustersLength) return;
+		if (cl == 0 || cl == _clustersLength) return;
 		_clustersLength = cl;
 		
 		_clusters.add(clusters);
 	}
 	
 	set zoom(double zoom) {
-		_zoom.add(zoom);
+		final prevZoom = _zoom.value ?? defaultZoom;
+		if ((zoom - prevZoom).abs() > 1) {
+			_zoom.add(zoom);
+		}
 	}
 	
 	set bitmaps(Map<String, Uint8List> bitmaps) {
-		_bitmaps.add(bitmaps);
+		if (bitmaps?.isNotEmpty == true) {
+		 _bitmaps.add(bitmaps);
+		}
 	}
 	
-	set models(Iterable<ModelMarker> models) {
-		_models.add(models.toList());
+	set labelModels(Iterable<ModelMarker> models) {
+		if (models?.isNotEmpty == true) {
+			_labelModels.add(models.toList());
+		}
 	}
 	
 	@override
 	void dispose() {
 		_zoom.close();
-		_models.close();
+		_labelModels.close();
 		_labels.close();
 		_bitmaps.close();
 		_markersData.close();

@@ -32,7 +32,6 @@ import 'package:mahlmann_app/common/extensions.dart';
 import 'package:post_frame_image_builder/post_frame_image_builder.dart';
 import 'package:cluster_builder/cluster_builder.dart';
 
-
 // drawing custom marker on the field: https://github.com/flutter/flutter/issues/26109
 class ScreenMap extends StatelessWidget {
   @override
@@ -166,7 +165,7 @@ class ViewMapState extends State<ViewMap> {
                 final mapData = snapshot?.data;
                 final labelModels = mapData?.labels ?? <ModelMarker>{};
                 final fountainModels = mapData?.fountains ?? <ModelMarker>{};
-                _blocMarkers.models = labelModels;
+                _blocMarkers.labelModels = labelModels;
                 return Stack(
                   children: [
                     PostFrameImageBuilder<ModelMarker>(
@@ -186,13 +185,13 @@ class ViewMapState extends State<ViewMap> {
                               zoom: zoom,
                               clusterables: fountainModels?.toList() ?? [],
                               createCluster: (cluster, lng, lat) => ModelMarker(
-                                id: cluster.id.toString(),
-                                latLng: LatLng(lat, lng),
-                                isCluster: cluster.isCluster,
-                                clusterId: cluster.id,
-                                pointsSize: cluster.pointsSize,
-                                childMarkerId: cluster.childMarkerId,
-                              ),
+                                    id: cluster.id.toString(),
+                                    latLng: LatLng(lat, lng),
+                                    isCluster: cluster.isCluster,
+                                    clusterId: cluster.id,
+                                    pointsSize: cluster.pointsSize,
+                                    childMarkerId: cluster.childMarkerId,
+                                  ),
                               builder: (List<ModelMarker> clusters) {
                                 _blocMarkers.clusters = clusters;
                                 return Container();
@@ -208,7 +207,8 @@ class ViewMapState extends State<ViewMap> {
                             myLocationButtonEnabled: false,
                             polygons: mapData?.polygons,
                             polylines: mapData?.polylines,
-                            markers: _buildAllMarkers(mapData, labels, fountains),
+                            markers:
+                                _buildAllMarkers(mapData, labels, fountains),
                             onCameraMove: (position) {
                               _blocMarkers.zoom = position.zoom;
                             },
@@ -412,9 +412,7 @@ class ViewMapState extends State<ViewMap> {
                         future: _backendReminder(),
                         builder: (c, snapshot) {
                           final isProd = snapshot.data;
-                          final style = TextStyle(
-                            color: Colors.blueAccent
-                          );
+                          final style = TextStyle(color: Colors.blueAccent);
                           return isProd == null
                               ? Container()
                               : isProd
@@ -430,7 +428,7 @@ class ViewMapState extends State<ViewMap> {
       ),
     );
   }
-  
+
   Future<bool> _backendReminder() async {
     final email = await Prefs.getLoginResponse().then((r) => r.email ?? "");
     if (email.startsWith(TEST_PREFIX)) {
@@ -524,7 +522,9 @@ class ViewMapState extends State<ViewMap> {
               }
             },
             icon: isFountain
-                ? iconDrop
+                ? model.isCluster
+                    ? model.icon ?? iconDrop
+                    : iconDrop
                 : model.icon != null
                     ? model.icon
                     : BitmapDescriptor.defaultMarkerWithHue(
@@ -604,20 +604,18 @@ class ViewMapState extends State<ViewMap> {
     return Map.fromEntries(entries);
   }
 
-  Set<Marker> _buildAllMarkers(MapData mapData, List<ModelMarker> labels, List<ModelMarker> fountains) => [
-    if (mapData?.showFountains != false &&
-        fountains?.isNotEmpty == true)
-      ..._buildMarkers(fountains),
-    if (mapData?.pins?.isNotEmpty == true)
-      ..._buildMarkers(mapData.pins,
-          isFountain: false),
-    if (mapData?.currentPosition != null)
-      ..._buildMarkers([mapData.currentPosition],
-          isFountain: false),
-    if (mapData?.showLabels != false &&
-        labels != null)
-      ..._buildMarkers(labels, isFountain: false),
-  ].toSet();
+  Set<Marker> _buildAllMarkers(MapData mapData, List<ModelMarker> labels,
+          List<ModelMarker> fountains) =>
+      [
+        if (mapData?.showFountains != false && fountains?.isNotEmpty == true)
+          ..._buildMarkers(fountains),
+        if (mapData?.pins?.isNotEmpty == true)
+          ..._buildMarkers(mapData.pins, isFountain: false),
+        if (mapData?.currentPosition != null)
+          ..._buildMarkers([mapData.currentPosition], isFountain: false),
+        if (mapData?.showLabels != false && labels != null)
+          ..._buildMarkers(labels, isFountain: false),
+      ].toSet();
 }
 
 class SearchSuggestionItem extends StatelessWidget {
