@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
@@ -16,6 +17,7 @@ class BlocMarkers extends Disposable {
 	static const thresholdZoom = 12.0;
 	static const defaultZoom = 15.0;
 	int _clustersLength = 0;
+	LatLngBounds _bounds;
 	
 	// resulting data: labels + fountains/clusters
 	final _markersData = rx.BehaviorSubject<MarkersData>.seeded(MarkersData());
@@ -30,6 +32,7 @@ class BlocMarkers extends Disposable {
 	Stream<List<ModelMarker>> get labels => _labels.stream;
 	Stream<MarkersData> get markersData => _markersData.stream;
 	Stream<double> get zoomStream => _zoom.stream;
+	double get currentZoom => _zoom.value;
 	
 	BlocMarkers() {
 		rx.Rx.combineLatest([
@@ -47,7 +50,7 @@ class BlocMarkers extends Disposable {
 			
 			print("zoom: $zoom");
 			
-			if (zoom > thresholdZoom) {
+			if (zoom > thresholdZoom && _bounds != null) {
 				labelModels?.forEach((model) {
 					final bitmap = bitmaps[model.id];
 					model.icon = bitmap != null
@@ -55,9 +58,10 @@ class BlocMarkers extends Disposable {
 							: model.hue != null
 							? BitmapDescriptor.defaultMarkerWithHue(model.hue)
 							: BitmapDescriptor.defaultMarker;
+					if (isWithinBounds(model)) {
+						labels.add(model);
+					}
 				});
-				
-				labels.addAll(labelModels);
 			}
 			
 			final data = MarkersData(
@@ -66,7 +70,25 @@ class BlocMarkers extends Disposable {
 			);
 			_markersData.add(data);
 		});
+		
+		Geolocator().getCurrentPosition();
 	}
+	
+	bool isWithinBounds(ModelMarker model) {
+		final lat = model.latLng.latitude;
+		final lng = model.latLng.longitude;
+		final sw = _bounds.southwest;
+		final ne = _bounds.northeast;
+		return lat > sw.latitude &&
+				lat < ne.latitude &&
+				lng > sw.longitude &&
+				lng < ne.longitude;
+	}
+
+
+  set bounds(LatLngBounds bounds) {
+		_bounds = bounds;
+  }
 	
 	set clusters(List<ModelMarker> clusters) {
 		final cl = clusters.length;
@@ -82,10 +104,7 @@ class BlocMarkers extends Disposable {
 	}
 	
 	set zoom(double zoom) {
-		final prevZoom = _zoom.value ?? defaultZoom;
-		if ((zoom - prevZoom).abs() > 1) {
-			_zoom.add(zoom);
-		}
+		_zoom.add(zoom);
 	}
 	
 	set bitmaps(Map<String, Uint8List> bitmaps) {

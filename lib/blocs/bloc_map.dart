@@ -374,12 +374,12 @@ class BlocMap extends Disposable {
         (value, element) => value < element ? value : element); // smallest
     final southwestLon = points
         .map((p) => p.longitude)
-        .reduce((value, element) => value < element ? value : element);
+        .reduce((value, element) => value < element ? value : element); // smallest
     final northeastLat = points.map((p) => p.latitude).reduce(
         (value, element) => value > element ? value : element); // biggest
     final northeastLon = points
         .map((p) => p.longitude)
-        .reduce((value, element) => value > element ? value : element);
+        .reduce((value, element) => value > element ? value : element); // biggest
     return LatLngBounds(
         southwest: LatLng(southwestLat, southwestLon),
         northeast: LatLng(northeastLat, northeastLon));

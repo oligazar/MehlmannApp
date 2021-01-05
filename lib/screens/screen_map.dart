@@ -209,8 +209,12 @@ class ViewMapState extends State<ViewMap> {
                             polylines: mapData?.polylines,
                             markers:
                                 _buildAllMarkers(mapData, labels, fountains),
-                            onCameraMove: (position) {
-                              _blocMarkers.zoom = position.zoom;
+                            onCameraMove: (position) async {
+                              final currentZoom = _blocMarkers.currentZoom ?? BlocMarkers.defaultZoom;
+                              if ((position.zoom - currentZoom).abs() > 1) {
+                                _blocMarkers.bounds = await _controller.future.then((c) => c.getVisibleRegion());
+                                _blocMarkers.zoom = position.zoom;
+                              }
                             },
                             initialCameraPosition: _kGooglePlex,
                             onMapCreated: _onMapCreated,
@@ -446,9 +450,10 @@ class ViewMapState extends State<ViewMap> {
     _fountainInfoSubscription?.cancel();
   }
 
-  _onMapCreated(GoogleMapController controller) {
+  _onMapCreated(GoogleMapController controller) async {
     if (!_controller.isCompleted) {
       _controller.complete(controller);
+      _blocMarkers.bounds = await controller.getVisibleRegion();
     }
     _mapDataSubscription = _blocMap.bounds.listen((data) async {
       if (data != null) {
@@ -470,6 +475,7 @@ class ViewMapState extends State<ViewMap> {
   Future _zoomFitBounds(LatLngBounds bounds) async {
     await _controller.future.then((controller) {
       controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 60));
+      controller.getVisibleRegion();
     });
   }
 
