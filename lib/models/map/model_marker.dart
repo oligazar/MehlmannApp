@@ -35,7 +35,7 @@ class ModelMarker extends IconizedClusterable {
 					clusterId: clusterId,
 					pointsSize: pointsSize,
 					childMarkerId: childMarkerId,
-					equatable: CompositionEquatable([title, subTitle, desc]));
+					equatable: CompositionEquatable([id, title, subTitle, desc]));
 
 	Marker toMarker() => Marker(
 		markerId: MarkerId(id),

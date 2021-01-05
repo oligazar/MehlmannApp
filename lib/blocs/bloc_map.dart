@@ -54,7 +54,7 @@ class BlocMap extends Disposable {
 
   bool get hasFieldInfo => _fieldInfo.hasValue;
 
-  final List<LatLng> _points = <LatLng>[];
+  final List<LatLng> _pins = <LatLng>[];
 
   BtnsMode get currentMode => _mode.value;
 
@@ -125,7 +125,7 @@ class BlocMap extends Disposable {
   void onMapTap(LatLng latLng) {
     if (_mode.value == BtnsMode.measureArea ||
         _mode.value == BtnsMode.measureDistance) {
-      _points.add(latLng);
+      _pins.add(latLng);
 
       _measurement.add(_calculateMeasurement());
 
@@ -138,19 +138,22 @@ class BlocMap extends Disposable {
   }
 
   Set<ModelMarker> _createPins() {
-    final points = currentMode == BtnsMode.measureDistance && _points.length > 2
-        ? <LatLng>[_points.first, _points.last]
-        : _points;
-    return points.map((point) {
+    final points = currentMode == BtnsMode.measureDistance && _pins.length > 2
+        ? <LatLng>[_pins.first, _pins.last]
+        : _pins;
+    final pins = points.map((point) {
       final lat = point.latitude;
       final lng = point.longitude;
       return ModelMarker(
-        id: "markerId-pin-${_points.length}-$lat-$lng",
+        id: "markerId-pin-${_pins.length}-$lat-$lng",
         latLng: LatLng(lat, lng),
         hue: BitmapDescriptor.hueRed,
         // color: f.name,
       );
-    }).toSet();
+    });
+    final set = pins.toSet();
+    print("points: $points, pins: $pins, set: $set");
+    return set;
   }
 
   void onMeasurementClick() {
@@ -161,7 +164,7 @@ class BlocMap extends Disposable {
         break;
       case BtnsMode.measureDistance:
         newMode = BtnsMode.none;
-        _points.clear();
+        _pins.clear();
         break;
     }
     _mode.add(newMode);
@@ -215,7 +218,7 @@ class BlocMap extends Disposable {
   }
 
   void onBackBtnClick() {
-    _points.removeLast();
+    _pins.removeLast();
     _measurement.add(_calculateMeasurement());
     _updateMapData(
       pins: _createPins(),
@@ -267,16 +270,16 @@ class BlocMap extends Disposable {
   double _calculateMeasurement() {
     // TODO: optimization - pull the code from the library
     if (currentMode == BtnsMode.measureArea) {
-      if (_points.length > 2) {
+      if (_pins.length > 2) {
         final areaSquareMeters = mt.SphericalUtil.computeArea(
-            _points.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
+            _pins.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
         final areaHa = areaSquareMeters / 10000;
         return areaHa;
       }
     } else {
-      if (_points.length > 1) {
+      if (_pins.length > 1) {
         final distanceMeters = mt.SphericalUtil.computeLength(
-            _points.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
+            _pins.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
         return distanceMeters;
       }
     }
@@ -284,12 +287,12 @@ class BlocMap extends Disposable {
   }
 
   Set<Polyline> _createPolylines() {
-    if (currentMode == BtnsMode.measureDistance && _points.length > 1) {
+    if (currentMode == BtnsMode.measureDistance && _pins.length > 1) {
       final polyline = Polyline(
         polylineId: PolylineId("measurement"),
         width: 2,
         color: Colors.blue,
-        points: _points,
+        points: _pins,
       );
       return Set.of([polyline]);
     } else {
@@ -428,13 +431,13 @@ class BlocMap extends Disposable {
     });
 
     // handle measurement polygon
-    if (_points.length > 2 && currentMode == BtnsMode.measureArea) {
+    if (_pins.length > 2 && currentMode == BtnsMode.measureArea) {
       final polygon = Polygon(
         strokeWidth: 1,
         polygonId: PolygonId("measurement"),
         fillColor: Colors.redAccent.withAlpha(160),
         strokeColor: Colors.black,
-        points: _points,
+        points: _pins,
       );
       polygons.updateWhere(
           Set.of([polygon]), (o, n) => o.polygonId == n.polygonId);
