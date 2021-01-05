@@ -16,10 +16,10 @@ abstract class Fountain implements Built<Fountain, FountainBuilder>, TimeSaveabl
   String get name;
   
   @nullable
-  double get latitude;
+  double get lat;
   
   @nullable
-  double get longitude;
+  double get lng;
   
   @nullable
   String get color;
@@ -47,8 +47,8 @@ abstract class Fountain implements Built<Fountain, FountainBuilder>, TimeSaveabl
               CREATE TABLE $TABLE_FOUNTAINS (
                 $COL_ID INTEGER PRIMARY KEY,
                 $COL_NAME TEXT,
-                $COL_LATITUDE REAL,
-                $COL_LONGITUDE REAL,
+                $COL_LAT REAL,
+                $COL_LNG REAL,
                 $COL_COLOR TEXT,
                 $COL_SAVE_TIME INTEGER
               )

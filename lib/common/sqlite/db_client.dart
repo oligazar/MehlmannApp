@@ -5,12 +5,16 @@ import 'package:mahlmann_app/common/interfaces/db_change_listener.dart';
 import 'package:mahlmann_app/common/interfaces/db_saveable.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
-import 'package:mahlmann_app/models/built_value/user.dart';
+import 'package:mahlmann_app/models/built_value/group.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DbClient {
+  
+  // static final _databaseVersion = 2; - should be!!
+  static final _databaseVersion = 2;
+  
   Future<Database> get database async {
     if (_db != null) return _db;
     _db = await _initDb();
@@ -19,16 +23,16 @@ class DbClient {
 
   // Users
 
-  insertUsers(List<User> users, {bool shouldClearTable = true}) async {
-    await _insertDBSaveable(users, TABLE_USERS,
+  insertGroups(List<Group> groups, {bool shouldClearTable = true}) async {
+    await _insertDBSaveable(groups, TABLE_GROUPS,
         shouldClearTable: shouldClearTable);
   }
 
-  Future<List<User>> queryUsers() async {
+  Future<List<Group>> queryGroups() async {
     return queryListIn(
-      TABLE_USERS,
-      User.queryColumns,
-      (m) => User.fromMap(m),
+      TABLE_GROUPS,
+      Group.queryColumns,
+      (m) => Group.fromMap(m),
     );
   }
 
@@ -129,16 +133,14 @@ class DbClient {
 
   static final _databaseName = "SqliteClient.common.sqlite.db";
 
-  static final _databaseVersion = 1;
-
   final List<String> _tableCreators = [
-    User.tableCreator,
+    Group.tableCreator,
     Fountain.tableCreator,
     Field.tableCreator,
   ];
 
   final List<String> _tablesToDelete = [
-    TABLE_USERS,
+    TABLE_GROUPS,
     TABLE_FOUNTAINS,
     TABLE_FIELDS
   ];

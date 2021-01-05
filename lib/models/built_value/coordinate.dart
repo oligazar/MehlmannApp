@@ -7,10 +7,10 @@ part 'coordinate.g.dart';
 abstract class Coordinate implements Built<Coordinate, CoordinateBuilder> {
   
   @nullable
-  double get latitude;
+  double get lat;
   
   @nullable
-  double get longitude;
+  double get lng;
   
   Coordinate._();
   

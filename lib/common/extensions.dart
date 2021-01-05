@@ -60,6 +60,7 @@ extension SetExt<E> on Set<E> {
 extension LatLngExt on LatLng {
 	
 	bool isWithinBounds(LatLngBounds bounds) {
+		if (bounds == null) return true;
 		final sw = bounds.southwest;
 		final ne = bounds.northeast;
 		return latitude > sw.latitude &&

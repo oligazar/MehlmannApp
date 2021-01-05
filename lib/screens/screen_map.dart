@@ -116,9 +116,9 @@ class ViewMapState extends State<ViewMap> {
                           title: _loc.route,
                           action: () {
                             final c = field.coordinates.firstOrNull;
-                            if (c.latitude != null && c.longitude != null) {
+                            if (c.lat != null && c.lng != null) {
                               final urls = MapOpener.buildMapUrls(
-                                  location: LatLng(c.latitude, c.longitude));
+                                  location: LatLng(c.lat, c.lng));
                               MapOpener.openMap(urls);
                             }
                             Navigator.of(context).pop();

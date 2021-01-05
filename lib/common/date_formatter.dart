@@ -9,6 +9,7 @@ class DateFormatter {
 	
 	static Future<String> getTimeStringAsync({DateTime dateTime, String format = dateFormat}) async {
 		final date = dateTime ?? DateTime.now();
+		
 		try {
 			final formattedString = DateFormatterPlugin.getFormattedDate(date.millisecondsSinceEpoch, format);
 			print("DateFormatter.getTimeStringAsync, formattedDateString: $formattedString");

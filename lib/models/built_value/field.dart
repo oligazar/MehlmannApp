@@ -30,8 +30,11 @@ abstract class Field implements Built<Field, FieldBuilder>, TimeSaveable {
   String get note;
 
   @nullable
-  @BuiltValueField(wireName: COL_AREA_SIZE)
+  @BuiltValueField(wireName: COL_AREA)
   double get areaSize;
+
+  @nullable
+  Coordinate get centroid;
 
   @nullable
   BuiltList<Coordinate> get coordinates;
@@ -48,12 +51,15 @@ abstract class Field implements Built<Field, FieldBuilder>, TimeSaveable {
 
   Map<String, dynamic> toDb() {
     final map = this.toMap();
-    return map..[COL_COORDINATES] = json.encode(map[COL_COORDINATES]);
+    return map
+      ..[COL_COORDINATES] = json.encode(map[COL_COORDINATES])
+      ..[COL_CENTROID] = json.encode(map[COL_CENTROID]);
   }
 
   static Field fromDb(Map<String, dynamic> map) =>
       fromMap(Map<String, dynamic>.from(map)
-        ..[COL_COORDINATES] = json.decode(map[COL_COORDINATES]));
+        ..[COL_COORDINATES] = json.decode(map[COL_COORDINATES])
+        ..[COL_CENTROID] = json.decode(map[COL_CENTROID]));
 
   Map<String, dynamic> toMap() {
     return serializers.serializeWith(Field.serializer, this);
@@ -80,7 +86,8 @@ abstract class Field implements Built<Field, FieldBuilder>, TimeSaveable {
                 $COL_STATUS TEXT,
                 $COL_IS_CABBAGE TEXT,
                 $COL_NOTE TEXT,
-                $COL_AREA_SIZE REAL,
+                $COL_AREA REAL,
+                $COL_CENTROID TEXT,
                 $COL_COORDINATES TEXT,
                 $COL_SAVE_TIME INTEGER
               )

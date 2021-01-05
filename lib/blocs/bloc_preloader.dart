@@ -15,12 +15,12 @@ class BlocPreloader extends Disposable {
   }
 	
 	Future<void> _fetchAndSaveFields() async {
-		final response = await _api.fetchFieldsResponse(from: await Prefs.lastUpdate);
+		final response = await _api.fetchObjects(from: await Prefs.lastUpdate);
   	await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
 		
-		await _db.insertUsers(response.users.toList());
 		await _db.insertFountains(response.fountains.toList());
 		await _db.insertFields(response.fields.toList());
+		await _db.insertGroups(response.groups.toList());
 		
 		// final users = await _db.queryUsers();
 		// final fountains = await _db.queryFountains();

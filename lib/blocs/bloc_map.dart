@@ -339,8 +339,8 @@ class BlocMap extends Disposable {
     String id,
   }) {
     return fountains.map((f) {
-      final lat = f.latitude;
-      final lng = f.longitude;
+      final lat = f.lat;
+      final lng = f.lng;
       return ModelMarker(
         id: id ?? "markerId-$lat-$lng",
         title: f.name,
@@ -357,11 +357,11 @@ class BlocMap extends Disposable {
       }) {
     return [
       for (Field f in fields)
-        if (f.coordinates.firstOrNull != null) ModelMarker(
-        id: id ?? "markerId-${f.coordinates.firstOrNull.latitude}-${f.coordinates.firstOrNull.longitude}",
+        if (f.centroid != null) ModelMarker(
+        id: id ?? "markerId-${f.centroid.lat}-${f.centroid.lng}",
         title: f.name,
         subTitle: "${f.areaSize}",
-        latLng: LatLng(f.coordinates.firstOrNull.latitude, f.coordinates.firstOrNull.longitude),
+        latLng: LatLng(f.centroid.lat, f.centroid.lng),
         hue: BitmapDescriptor.hueBlue,
         // color: f.name,
       )
@@ -409,8 +409,8 @@ class BlocMap extends Disposable {
     fields.forEach((field) {
       final points = <LatLng>[];
       field.coordinates?.forEach((c) {
-        if (c.latitude != null && c.longitude != null) {
-          points.add(LatLng(c.latitude, c.longitude));
+        if (c.lat != null && c.lng != null) {
+          points.add(LatLng(c.lat, c.lng));
         }
       });
       final color = _getColorFor(field);
@@ -448,7 +448,7 @@ class BlocMap extends Disposable {
   void _updateBounds(Iterable<Field> fields) {
     final coordinates = fields
         .expand(
-            (f) => f.coordinates.map((c) => LatLng(c.latitude, c.longitude)))
+            (f) => f.coordinates.map((c) => LatLng(c.lat, c.lng)))
         .toList();
     final bounds = _createBounds(coordinates);
     // update bounds
@@ -506,14 +506,19 @@ class BlocMap extends Disposable {
   Future onRefreshBtnClicked() async {
     _isLoading.add(true);
 
-    final response = await _api.fetchFieldsResponse(from: await Prefs.lastUpdate);
-    await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
-    
-    await _db.insertUsers(response.users.toList());
-    await _db.insertFountains(response.fountains.toList());
-    await _db.insertFields(response.fields.toList());
-    
-    await _prepareData();
-    _isLoading.add(false);
+    try {
+      final response = await _api.fetchObjects();
+      await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
+  
+      await _db.insertFountains(response.fountains.toList());
+      await _db.insertFields(response.fields.toList());
+      await _db.insertGroups(response.groups.toList());
+  
+      await _prepareData();
+    } catch (e) {
+      print("onRefreshBtnClicked: $e");
+    } finally {
+      _isLoading.add(false);
+    }
   }
 }
