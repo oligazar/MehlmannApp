@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
 import 'package:rxdart/rxdart.dart' as rx;
+import 'package:mahlmann_app/common/extensions.dart';
 
 class MarkersData {
 	final List<ModelMarker> labels;
@@ -14,10 +15,10 @@ class MarkersData {
 }
 
 class BlocMarkers extends Disposable {
-	static const thresholdZoom = 12.0;
+	static const thresholdZoom = 14.0;
 	static const defaultZoom = 15.0;
 	int _clustersLength = 0;
-	LatLngBounds _bounds;
+	LatLngBounds bounds;
 	
 	// resulting data: labels + fountains/clusters
 	final _markersData = rx.BehaviorSubject<MarkersData>.seeded(MarkersData());
@@ -50,7 +51,7 @@ class BlocMarkers extends Disposable {
 			
 			print("zoom: $zoom");
 			
-			if (zoom > thresholdZoom && _bounds != null) {
+			if (zoom > thresholdZoom && bounds != null) {
 				labelModels?.forEach((model) {
 					final bitmap = bitmaps[model.id];
 					model.icon = bitmap != null
@@ -58,7 +59,7 @@ class BlocMarkers extends Disposable {
 							: model.hue != null
 							? BitmapDescriptor.defaultMarkerWithHue(model.hue)
 							: BitmapDescriptor.defaultMarker;
-					if (isWithinBounds(model)) {
+					if (model.latLng.isWithinBounds(bounds)) {
 						labels.add(model);
 					}
 				});
@@ -73,23 +74,7 @@ class BlocMarkers extends Disposable {
 		
 		Geolocator().getCurrentPosition();
 	}
-	
-	bool isWithinBounds(ModelMarker model) {
-		final lat = model.latLng.latitude;
-		final lng = model.latLng.longitude;
-		final sw = _bounds.southwest;
-		final ne = _bounds.northeast;
-		return lat > sw.latitude &&
-				lat < ne.latitude &&
-				lng > sw.longitude &&
-				lng < ne.longitude;
-	}
 
-
-  set bounds(LatLngBounds bounds) {
-		_bounds = bounds;
-  }
-	
 	set clusters(List<ModelMarker> clusters) {
 		final cl = clusters.length;
 		

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -53,5 +54,17 @@ extension SetExt<E> on Set<E> {
 			this.removeWhere((item) => test(item, newItem));
 			this.add(newItem);
 		});
+	}
+}
+
+extension LatLngExt on LatLng {
+	
+	bool isWithinBounds(LatLngBounds bounds) {
+		final sw = bounds.southwest;
+		final ne = bounds.northeast;
+		return latitude > sw.latitude &&
+				latitude < ne.latitude &&
+				longitude > sw.longitude &&
+				longitude < ne.longitude;
 	}
 }

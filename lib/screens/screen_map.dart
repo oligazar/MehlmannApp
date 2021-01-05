@@ -211,7 +211,7 @@ class ViewMapState extends State<ViewMap> {
                                 _buildAllMarkers(mapData, labels, fountains),
                             onCameraMove: (position) async {
                               final currentZoom = _blocMarkers.currentZoom ?? BlocMarkers.defaultZoom;
-                              if ((position.zoom - currentZoom).abs() > 1) {
+                              if ((position.zoom - currentZoom).abs() > 1 || position.target.isWithinBounds(_blocMarkers.bounds)) {
                                 _blocMarkers.bounds = await _controller.future.then((c) => c.getVisibleRegion());
                                 _blocMarkers.zoom = position.zoom;
                               }
