@@ -41,7 +41,9 @@ class BlocMarkers extends Disposable {
 			_clusters,
 			_bitmaps,
 			_zoom,
-		], (streams) => streams).listen((s) {
+		], (streams) => streams)
+		// .debounce((_) => rx.TimerStream(true, Duration(seconds: 1)))
+				.listen((s) {
 			final List<ModelMarker> labelModels = s[0] ?? [];
 			final List<ModelMarker> clusters = s[1] ?? [];
 			final Map<String, Uint8List> bitmaps = s[2] ?? {};

@@ -21,10 +21,10 @@ class DbClient {
     return _db;
   }
 
-  // Users
+  // Groups
 
   insertGroups(List<Group> groups, {bool shouldClearTable = true}) async {
-    await _insertDBSaveable(groups, TABLE_GROUPS,
+    await _insertMap(groups?.map((g) => g.toDb())?.toList() ?? [], TABLE_GROUPS,
         shouldClearTable: shouldClearTable);
   }
 
@@ -32,7 +32,7 @@ class DbClient {
     return queryListIn(
       TABLE_GROUPS,
       Group.queryColumns,
-      (m) => Group.fromMap(m),
+      (g) => Group.fromDb(g),
     );
   }
 
@@ -55,14 +55,14 @@ class DbClient {
   // Fields
 
   insertFields(List<Field> fields, {bool shouldClearTable = true}) async {
-    await _insertMap(fields?.map((c) => c.toDb())?.toList() ?? [], TABLE_FIELDS,
+    await _insertMap(fields?.map((f) => f.toDb())?.toList() ?? [], TABLE_FIELDS,
         shouldClearTable: shouldClearTable);
   }
 
   Future<List<Field>> queryFieldsIn(
       {String query = "", List<int> ids}) async {
     return queryListIn(TABLE_FIELDS, Field.queryColumns,
-            (m) => Field.fromDb(m),
+            (f) => Field.fromDb(f),
         queryCol: COL_NAME, query: query, argsCol: COL_ID, args: ids);
   }
 
@@ -115,7 +115,7 @@ class DbClient {
       whereArgs: totalArgs,
       orderBy: orderBy,
     );
-    // print("maps: $maps");
+    print("maps: $maps");
     return maps.map((m) => converter(m)).toList();
   }
   

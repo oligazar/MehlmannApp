@@ -236,7 +236,8 @@ class BlocMap extends Disposable {
   }
 
   void onSentenceInboxClick() async {
-    final groups = await _api.fetchGroups();
+    // final groups = await _api.fetchGroups();
+    final groups = await _db.queryGroups();
     final filtered = groups.where((group) => group.name?.isNotEmpty == true).toList();
     _inboxGroups.value = filtered;
   }
@@ -244,7 +245,8 @@ class BlocMap extends Disposable {
   void handleSentence(List<int> fieldIds) async {
     final db = DbClient();
     _inboxFields.clear();
-    _inboxFields.addAll(await db.queryFieldsIn(ids: fieldIds.toList()) ?? []);
+    final inboxFields = await db.queryFieldsIn(ids: fieldIds.toList()) ?? [];
+    _inboxFields.addAll(inboxFields);
 
     final polygons = _createPolygons();
     _updateMapData(polygons: polygons);

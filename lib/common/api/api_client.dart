@@ -34,6 +34,7 @@ class ApiClient extends ApiBase {
     } : null;
     final url = buildUri("/api/v1/objects", query);
     final h = await headers;
+    print("headers: $h");
   
     final response = await client.getUri(url, options: Options(headers: h));
     // final list = response.data["fields"]?.map((f) => Field.fromMap(f))?.toList() ?? [];
