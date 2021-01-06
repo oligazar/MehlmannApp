@@ -316,7 +316,10 @@ class ViewMapState extends State<ViewMap> {
                                       ),
                                       FutureBuilder<bool>(
                                           future: Prefs.getLoginResponse()
-                                              .then((r) => r.admin),
+                                              .then((r) {
+                                                print("login response: $r");
+                                                return r.admin;
+                                              }),
                                           builder: (context, snapshot) {
                                             final isAdmin =
                                                 snapshot.data == true;

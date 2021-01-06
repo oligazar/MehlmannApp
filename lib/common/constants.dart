@@ -3,7 +3,7 @@
 //
 // Admin: admin@mahlmann.com / password
 // Driver: driver1@mahlmann.com / password
-// Test: test.mobile@elie.de / 123456
+// Test: test.mobile@elie.de / 123456  // isAdmin=false !! change this !!
 
 
 const String STAG = 'stag';

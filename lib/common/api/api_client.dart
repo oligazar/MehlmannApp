@@ -47,7 +47,7 @@ class ApiClient extends ApiBase {
 
   Future setFields(String name, List<int> fieldIds) async {
     print('setFields');
-    final url = buildUri("/api/v1/fields/set_fields");
+    final url = buildUri("/api/v1/objects/set_fields");
     final data = {"name": name, "fieldIds": fieldIds};
 
     final response = await client.postUri(url,
@@ -57,7 +57,7 @@ class ApiClient extends ApiBase {
 
   Future<List<Comment>> fetchComments(int fieldId) async {
     print('fetchComments');
-    final url = buildUri("/api/v1/fields/$fieldId/comments");
+    final url = buildUri("/api/v1/objects/$fieldId/comments");
     final h = await headers;
 
     final response = await client.getUri(url, options: Options(headers: h));
@@ -70,7 +70,7 @@ class ApiClient extends ApiBase {
 
   Future<Comment> createComment(int fieldId, String text) async {
     print('createComment');
-    final url = buildUri("/api/v1/fields/$fieldId/comments");
+    final url = buildUri("/api/v1/objects/$fieldId/comments");
     final data = {"text": text};
 
     final response = await client.postUri(url,
