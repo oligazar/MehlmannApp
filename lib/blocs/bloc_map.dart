@@ -193,15 +193,6 @@ class BlocMap extends Disposable {
     _mode.add(newMode);
   }
 
-  Future onSendSentence(String sentenceName) async {
-    final fieldIds = _fieldsGroup.map((fg) => fg.id).toList();
-    await _api.setFields(sentenceName, fieldIds);
-    _fieldsGroup.clear();
-    _updateMapData(
-      polygons: _createPolygons(),
-    );
-  }
-
   void onSearchFieldBtnClick() {
     final newMode =
         _mode.value == BtnsMode.search ? BtnsMode.none : BtnsMode.search;
@@ -237,18 +228,10 @@ class BlocMap extends Disposable {
 
   void onSentenceInboxClick() async {
     final groups = await _db.queryGroups();
-    refreshGroups();
     final filtered = groups.where((group) => group.name?.isNotEmpty == true).toList();
     _inboxGroups.value = filtered;
   }
   
-  void refreshGroups() async {
-    final groups = await _api.fetchGroups();
-    await _db.insertGroups(groups);
-    final filtered = groups.where((group) => group.name?.isNotEmpty == true).toList();
-    _inboxGroups.value = filtered;
-  }
-
   void handleSentence(List<int> fieldIds) async {
     final db = DbClient();
     _inboxFields.clear();
@@ -259,6 +242,18 @@ class BlocMap extends Disposable {
     _updateMapData(polygons: polygons);
 
     _updateBounds(_inboxFields);
+  }
+
+  Future onSendSentence(String sentenceName) async {
+    final fieldIds = _fieldsGroup.map((fg) => fg.id).toList();
+    await _api.createGroup(sentenceName, fieldIds);
+    _fieldsGroup.clear();
+  
+    _updateMapData(
+      polygons: _createPolygons(),
+    );
+  
+    await _refresh();
   }
 
   void markCurrentPosition(LatLng latLng) {
@@ -532,5 +527,14 @@ class BlocMap extends Disposable {
     } finally {
       _isLoading.add(false);
     }
+  }
+
+  Future<void> _refresh() async {
+    final response = await _api.fetchObjects(from: await Prefs.lastUpdate);
+    await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
+  
+    await _db.insertFountains(response.fountains.toList(), shouldClearTable: false);
+    await _db.insertFields(response.fields.toList(), shouldClearTable: false);
+    await _db.insertGroups(response.groups.toList(), shouldClearTable: false);
   }
 }

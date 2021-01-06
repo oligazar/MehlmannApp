@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
-import 'package:mahlmann_app/models/built_value/group.dart';
 import 'package:mahlmann_app/models/built_value/objects_response.dart';
 import 'package:mahlmann_app/models/login_response.dart';
 import 'package:mahlmann_app/common/extensions.dart';
@@ -45,19 +44,9 @@ class ApiClient extends ApiBase {
     return ObjectsResponse.fromMap(response.data);
   }
 
-  Future setFields(String name, List<int> fieldIds) async {
-    print('setFields');
-    final url = buildUri("/api/v1/objects/set_fields");
-    final data = {"name": name, "fieldIds": fieldIds};
-
-    final response = await client.postUri(url,
-        data: json.encode(data), options: Options(headers: await headers));
-    print("response: $response");
-  }
-
   Future<List<Comment>> fetchComments(int fieldId) async {
     print('fetchComments');
-    final url = buildUri("/api/v1/objects/$fieldId/comments");
+    final url = buildUri("/api/v1/fields/$fieldId/comments");
     final h = await headers;
 
     final response = await client.getUri(url, options: Options(headers: h));
@@ -70,7 +59,7 @@ class ApiClient extends ApiBase {
 
   Future<Comment> createComment(int fieldId, String text) async {
     print('createComment');
-    final url = buildUri("/api/v1/objects/$fieldId/comments");
+    final url = buildUri("/api/v1/fields/$fieldId/comments");
     final data = {"text": text};
 
     final response = await client.postUri(url,
@@ -83,15 +72,25 @@ class ApiClient extends ApiBase {
     }
   }
 
-  Future<List<Group>> fetchGroups() async {
-    print('fetchGroups');
+  // Future<List<Group>> fetchGroups() async {
+  //   print('fetchGroups');
+  //   final url = buildUri("/api/v1/groups");
+  //
+  //   final response =
+  //       await client.getUri(url, options: Options(headers: await headers));
+  //
+  //   return List<Group>.from(
+  //       response.data["groups"]?.map((f) => Group.fromMap(f))?.toList() ?? []);
+  // }
+
+  Future createGroup(String name, List<int> fieldIds) async {
+    print('createGroup');
     final url = buildUri("/api/v1/groups");
-
-    final response =
-        await client.getUri(url, options: Options(headers: await headers));
-
-    return List<Group>.from(
-        response.data["groups"]?.map((f) => Group.fromMap(f))?.toList() ?? []);
+    final data = {"name": name, "fieldIds": fieldIds};
+  
+    final response = await client.postUri(url,
+        data: json.encode(data), options: Options(headers: await headers));
+    print("response: $response");
   }
 
 }
