@@ -322,7 +322,7 @@ class ViewMapState extends State<ViewMap> {
                                               }),
                                           builder: (context, snapshot) {
                                             final isAdmin =
-                                                snapshot.data == true;
+                                                snapshot.data == /*true*/false;
                                             return isAdmin &&
                                                     _blocMap.hasFieldInfo
                                                 ? MButton(

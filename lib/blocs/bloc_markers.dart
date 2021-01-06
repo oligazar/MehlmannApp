@@ -32,7 +32,7 @@ class BlocMarkers extends Disposable {
 	
 	Stream<List<ModelMarker>> get labels => _labels.stream;
 	Stream<MarkersData> get markersData => _markersData.stream;
-	Stream<double> get zoomStream => _zoom.stream;
+	Stream<double> get zoomStream => _zoom.stream.debounce((_) => rx.TimerStream(true, Duration(milliseconds: 400)));
 	double get currentZoom => _zoom.value;
 	
 	BlocMarkers() {
@@ -42,7 +42,7 @@ class BlocMarkers extends Disposable {
 			_bitmaps,
 			_zoom,
 		], (streams) => streams)
-		// .debounce((_) => rx.TimerStream(true, Duration(seconds: 1)))
+				.debounce((_) => rx.TimerStream(true, Duration(milliseconds: 400)))
 				.listen((s) {
 			final List<ModelMarker> labelModels = s[0] ?? [];
 			final List<ModelMarker> clusters = s[1] ?? [];

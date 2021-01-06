@@ -35,7 +35,7 @@ class BlocMap extends Disposable {
   final _fieldsGroup = Set<Field>(); // red
   final _inboxFields = Set<Field>(); // red
 
-  Stream<MapData> get mapData => _mapData.stream;
+  Stream<MapData> get mapData => _mapData.stream.debounce((_) => rx.TimerStream(true, Duration(milliseconds: 400)));
   Stream<bool> get isLoading => _isLoading.stream;
 
   Stream<LatLngBounds> get bounds => _bounds.stream;
@@ -236,8 +236,15 @@ class BlocMap extends Disposable {
   }
 
   void onSentenceInboxClick() async {
-    // final groups = await _api.fetchGroups();
     final groups = await _db.queryGroups();
+    refreshGroups();
+    final filtered = groups.where((group) => group.name?.isNotEmpty == true).toList();
+    _inboxGroups.value = filtered;
+  }
+  
+  void refreshGroups() async {
+    final groups = await _api.fetchGroups();
+    await _db.insertGroups(groups);
     final filtered = groups.where((group) => group.name?.isNotEmpty == true).toList();
     _inboxGroups.value = filtered;
   }
