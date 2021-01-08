@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mahlmann_app/blocs/bloc_preloader.dart';
+import 'package:mahlmann_app/widgets/dialogs/one_action_dialog.dart';
+import 'package:mahlmann_app/widgets/exception_handler.dart';
 import 'package:mahlmann_app/widgets/m_progress_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:mahlmann_app/common/extensions.dart';
 
 
 class ScreenPreloader extends StatelessWidget {
@@ -29,7 +32,18 @@ class ViewPreloader extends StatefulWidget {
 class _ViewPreloaderState extends State<ViewPreloader> {
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ExceptionHandler<BlocPreloader>(
+	    onException: (e) {
+		    showDialog(
+				    context: context,
+				    barrierDismissible: false,
+				    builder: (BuildContext context) => OneActionDialog(
+				    title: context.loc.errorTitle ?? "",
+				    message: e.toString(),
+				    btnTitle: context.loc.btnOk,
+		    ));
+	    },
+      child: Container(
 	    color: Colors.white,
 	    child: Stack(
 		    children: <Widget>[
@@ -53,6 +67,7 @@ class _ViewPreloaderState extends State<ViewPreloader> {
 			    ),
 		    ],
 	    ),
+      ),
     );
   }
 }

@@ -83,6 +83,8 @@ class MLocalizations {
   String get staging => "Staging";
 
   String get production => "Herstellung";
+
+  String get errorTitle => "Fehler";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

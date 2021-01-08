@@ -1,13 +1,20 @@
 import 'package:mahlmann_app/common/api/api_client.dart';
 import 'package:mahlmann_app/common/date_formatter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
+import 'package:mahlmann_app/common/interfaces/exception_handleable.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
+import 'package:rxdart/rxdart.dart' as rx;
 
-class BlocPreloader extends Disposable {
+class BlocPreloader extends ExceptionHandleable implements Disposable {
 	final _api = ApiClient();
 	final _db = DbClient();
 	final Function _onFetched;
+	
+	
+	final _exception = rx.BehaviorSubject<Exception>();
+	@override
+	Stream<Exception> get exception => _exception.stream;
 	
   BlocPreloader(this._onFetched) {
 	  print("BlocPreloader");
@@ -35,7 +42,7 @@ class BlocPreloader extends Disposable {
 	
   @override
   void dispose() {
-    // NOOP
+	  _exception.close();
   }
 	
 }

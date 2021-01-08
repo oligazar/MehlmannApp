@@ -9,6 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_map.dart';
 import 'package:mahlmann_app/blocs/bloc_markers.dart';
+import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
@@ -23,8 +24,10 @@ import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
 import 'package:mahlmann_app/widgets/dialogs/info_row.dart';
 import 'package:mahlmann_app/widgets/dialogs/m_dialog.dart';
+import 'package:mahlmann_app/widgets/dialogs/one_action_dialog.dart';
 import 'package:mahlmann_app/widgets/dialogs/sentence_inbox_dialog.dart';
 import 'package:mahlmann_app/widgets/dialogs/two_actions_dialog.dart';
+import 'package:mahlmann_app/widgets/exception_handler.dart';
 import 'package:mahlmann_app/widgets/m_button.dart';
 import 'package:mahlmann_app/widgets/m_progress_indicator.dart';
 import 'package:mahlmann_app/widgets/m_text_field.dart';
@@ -78,10 +81,10 @@ class ViewMapState extends State<ViewMap> {
   StreamSubscription<Field> _fieldInfoSubscription;
   StreamSubscription<Fountain> _fountainInfoSubscription;
 
-  final String _channel = 'UpdatesChannel';
+  final String _channelName = 'UpdatesChannel';
 
   String _action_cable_url(String uid, String client) =>
-      'wss://mmg.webapp.is/api/v1/cable?uid=$uid&client=$client';
+      'wss://$baseAuthority/api/v1/cable?uid=$uid&client=$client';
   ActionCable _cable;
 
   static final CameraPosition _mahlmannStation = CameraPosition(
@@ -166,286 +169,298 @@ class ViewMapState extends State<ViewMap> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          StreamBuilder<MapData>(
-              stream: _blocMap.mapData,
-              builder: (context, snapshot) {
-                final mapData = snapshot?.data;
-                final labelModels = mapData?.labels ?? <ModelMarker>{};
-                final fountainModels = mapData?.fountains ?? <ModelMarker>{};
-                _blocMarkers.labelModels = labelModels;
-                return Stack(
-                  children: [
-                    PostFrameImageBuilder<ModelMarker>(
-                      modelsMap: _mapModels(labelModels),
-                      widgetBuilder: (model) => model.toLabelMarker(),
-                      builder: (_, bitmaps) {
-                        _blocMarkers.bitmaps = bitmaps;
-                        return Container();
-                      },
-                    ),
-                    StreamBuilder<double>(
-                        stream: _blocMarkers.zoomStream,
-                        builder: (context, snap) {
-                          final zoom = snap.data ?? BlocMarkers.defaultZoom;
-                          print("ms4.zoom: $zoom");
-                          return ClusterBuilder<ModelMarker>(
-                              zoom: zoom,
-                              clusterables: fountainModels?.toList() ?? [],
-                              createCluster: (cluster, lng, lat) => ModelMarker(
-                                    id: cluster.id.toString(),
-                                    latLng: LatLng(lat, lng),
-                                    isCluster: cluster.isCluster,
-                                    clusterId: cluster.id,
-                                    pointsSize: cluster.pointsSize,
-                                    childMarkerId: cluster.childMarkerId,
-                                  ),
-                              builder: (List<ModelMarker> clusters) {
-                                _blocMarkers.clusters = clusters;
-                                return Container();
-                              });
-                        }),
-                    StreamBuilder<MarkersData>(
-                        stream: _blocMarkers.markersData,
-                        builder: (context, snapshot) {
-                          final labels = snapshot.data?.labels ?? [];
-                          final fountains = snapshot.data?.fountains ?? [];
-                          return GoogleMap(
-                            zoomControlsEnabled: false,
-                            myLocationButtonEnabled: false,
-                            polygons: mapData?.polygons,
-                            polylines: mapData?.polylines,
-                            markers:
-                                _buildAllMarkers(mapData, labels, fountains),
-                            onCameraMove: (position) async {
-                              final currentZoom = _blocMarkers.currentZoom ??
-                                  BlocMarkers.defaultZoom;
-                              if ((position.zoom - currentZoom).abs() > 1 ||
-                                  position.target
-                                      .isWithinBounds(_blocMarkers.bounds)) {
-                                _blocMarkers.bounds = await _controller.future
-                                    .then((c) => c.getVisibleRegion());
-                                _blocMarkers.zoom = position.zoom;
-                              }
-                            },
-                            initialCameraPosition: _mahlmannStation,
-                            onMapCreated: _onMapCreated,
-                            onTap: _blocMap.onMapTap,
-                            mapType: mapData?.isSatelliteView == true
-                                ? MapType.satellite
-                                : MapType.normal,
-                          );
-                        }),
-                    SafeArea(
-                      minimum: EdgeInsets.only(bottom: 20),
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            StreamBuilder<double>(
-                                stream: _blocMap.measurement,
-                                builder: (context, snapshot) {
-                                  final measurement = snapshot.data;
-                                  if (measurement != null) {
-                                    final mString = _blocMap.currentMode ==
-                                            BtnsMode.measureArea
-                                        ? "${measurement.toStringAsFixed(2)} ha"
-                                        : "${measurement.toStringAsFixed(2)} m";
-                                    return Text(mString);
-                                  } else {
-                                    return Container(height: 0);
-                                  }
-                                }),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                MButton(
-                                  onPressed: _blocMap.switchMapType,
-                                  icon: Icons.map,
-                                  isActive: mapData?.isSatelliteView == true,
-                                ),
-                                MButton(
-                                  onPressed: _goToCurrentPosition,
-                                  icon: Icons.location_on,
-                                ),
-                                MButton(
-                                  onPressed: _blocMap.onFountainsBtnClicked,
-                                  isActive: mapData?.showFountains != false,
-                                  icon: Icons.invert_colors,
-                                ),
-                                MButton(
-                                  onPressed: _blocMap.onLabelsBtnClicked,
-                                  isActive: mapData?.showLabels != false,
-                                  icon: Icons.local_offer,
-                                ),
-                                mapData?.pins?.isNotEmpty == true
-                                    ? MButton(
-                                        onPressed: _blocMap.onBackBtnClick,
-                                        // text: loc.back,
-                                        icon: Icons.undo)
-                                    : Container(height: 0),
-                                StreamBuilder<bool>(
-                                    stream: _blocMap.isLoading,
-                                    builder: (context, snapshot) {
-                                      final isLoading = snapshot.data == true;
-                                      return MButton(
-                                        onPressed: _blocMap.onRefreshBtnClicked,
-                                        isActive: !isLoading,
-                                        isEnabled: !isLoading,
-                                        icon: Icons.refresh,
-                                      );
-                                    }),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SafeArea(
-                      minimum: EdgeInsets.only(top: 28),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: StreamBuilder<BtnsMode>(
-                            stream: _blocMap.mode,
-                            builder: (context, snapshot) {
-                              final mode = snapshot.data;
-                              return Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      MButton(
-                                        onPressed: _blocMap.onMeasurementClick,
-                                        icon: mode == BtnsMode.measureDistance
-                                            ? Icons.straighten
-                                            : Icons.square_foot,
-                                        isActive: mode ==
-                                                BtnsMode.measureArea ||
-                                            mode == BtnsMode.measureDistance,
-                                      ),
-                                      FutureBuilder<bool>(
-                                          future: Prefs.getLoginResponse()
-                                              .then((r) {
-                                            print("login response: $r");
-                                            return r.admin;
-                                          }),
-                                          builder: (context, snapshot) {
-                                            final isAdmin =
-                                                snapshot.data == /*true*/ false;
-                                            return isAdmin &&
-                                                    _blocMap.hasFieldInfo
-                                                ? MButton(
-                                                    onPressed:
-                                                        _onSentenceBtnClick,
-                                                    icon: mode ==
-                                                            BtnsMode
-                                                                .createSentence
-                                                        ? Icons
-                                                            .location_searching
-                                                        : Icons.edit,
-                                                  )
-                                                : Container();
-                                          }),
-                                      MButton(
-                                        onPressed:
-                                            _blocMap.onSearchFieldBtnClick,
-                                        icon: Icons.search,
-                                        isActive: mode != BtnsMode.search,
-                                      ),
-                                      MButton(
-                                          onPressed: _onSentenceInboxClick,
-                                          icon: Icons.move_to_inbox),
-                                      MButton(
-                                          onPressed: _logOut,
-                                          icon: Icons.power_settings_new),
-                                    ],
-                                  ),
-                                  Flexible(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 16,
-                                      ),
-                                      child: mode == BtnsMode.search
-                                          ? SearchBox(
-                                              onSubmitted: _blocMap
-                                                  .onFieldsQuerySubmitted,
-                                              onChanged:
-                                                  _blocMap.onFieldsQueryChanged,
-                                              child: Flexible(
-                                                child:
-                                                    StreamBuilder<List<Field>>(
-                                                  stream: _blocMap
-                                                      .searchedFieldSuggestions,
-                                                  builder: (context, snapshot) {
-                                                    final fields =
-                                                        snapshot.data ?? [];
-                                                    return SingleChildScrollView(
-                                                      child: Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          for (Field field
-                                                              in fields)
-                                                            SearchSuggestionItem(
-                                                              field: field,
-                                                              onSelected: _blocMap
-                                                                  .onSuggestionFieldClick,
-                                                            )
-                                                        ],
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            )
-                                          : Container(),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
-                      ),
-                    ),
-                    StreamBuilder<bool>(
-                        stream: _blocMap.isLoading,
-                        builder: (context, snapshot) {
-                          final isLoading = snapshot.data == true;
-                          return isLoading
-                              ? Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: MProgressIndicator(),
-                                )
-                              : Container();
-                        }),
-                    Positioned(
-                      right: 24,
-                      bottom: 24,
-                      child: FutureBuilder(
-                        future: _backendReminder(),
-                        builder: (c, snapshot) {
-                          final isProd = snapshot.data;
-                          final style = TextStyle(color: Colors.blueAccent);
-                          return isProd == null
-                              ? Container()
-                              : isProd
-                                  ? Text("P", style: style)
-                                  : Text("S", style: style);
+    return ExceptionHandler<BlocMap>(
+      onException: (e) {
+        showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) => OneActionDialog(
+              title: context.loc.errorTitle ?? "",
+              message: e.toString(),
+              btnTitle: context.loc.btnOk,
+            ));
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            StreamBuilder<MapData>(
+                stream: _blocMap.mapData,
+                builder: (context, snapshot) {
+                  final mapData = snapshot?.data;
+                  final labelModels = mapData?.labels ?? <ModelMarker>{};
+                  final fountainModels = mapData?.fountains ?? <ModelMarker>{};
+                  _blocMarkers.labelModels = labelModels;
+                  return Stack(
+                    children: [
+                      PostFrameImageBuilder<ModelMarker>(
+                        modelsMap: _mapModels(labelModels),
+                        widgetBuilder: (model) => model.toLabelMarker(),
+                        builder: (_, bitmaps) {
+                          _blocMarkers.bitmaps = bitmaps;
+                          return Container();
                         },
                       ),
-                    )
-                  ],
-                );
-              }),
-        ],
+                      StreamBuilder<double>(
+                          stream: _blocMarkers.zoomStream,
+                          builder: (context, snap) {
+                            final zoom = snap.data ?? BlocMarkers.defaultZoom;
+                            print("ms4.zoom: $zoom");
+                            return ClusterBuilder<ModelMarker>(
+                                zoom: zoom,
+                                clusterables: fountainModels?.toList() ?? [],
+                                createCluster: (cluster, lng, lat) => ModelMarker(
+                                      id: cluster.id.toString(),
+                                      latLng: LatLng(lat, lng),
+                                      isCluster: cluster.isCluster,
+                                      clusterId: cluster.id,
+                                      pointsSize: cluster.pointsSize,
+                                      childMarkerId: cluster.childMarkerId,
+                                    ),
+                                builder: (List<ModelMarker> clusters) {
+                                  _blocMarkers.clusters = clusters;
+                                  return Container();
+                                });
+                          }),
+                      StreamBuilder<MarkersData>(
+                          stream: _blocMarkers.markersData,
+                          builder: (context, snapshot) {
+                            final labels = snapshot.data?.labels ?? [];
+                            final fountains = snapshot.data?.fountains ?? [];
+                            return GoogleMap(
+                              zoomControlsEnabled: false,
+                              myLocationButtonEnabled: false,
+                              polygons: mapData?.polygons,
+                              polylines: mapData?.polylines,
+                              markers:
+                                  _buildAllMarkers(mapData, labels, fountains),
+                              onCameraMove: (position) async {
+                                final currentZoom = _blocMarkers.currentZoom ??
+                                    BlocMarkers.defaultZoom;
+                                if ((position.zoom - currentZoom).abs() > 1 ||
+                                    position.target
+                                        .isWithinBounds(_blocMarkers.bounds)) {
+                                  _blocMarkers.bounds = await _controller.future
+                                      .then((c) => c.getVisibleRegion());
+                                  _blocMarkers.zoom = position.zoom;
+                                }
+                              },
+                              initialCameraPosition: _mahlmannStation,
+                              onMapCreated: _onMapCreated,
+                              onTap: _blocMap.onMapTap,
+                              mapType: mapData?.isSatelliteView == true
+                                  ? MapType.satellite
+                                  : MapType.normal,
+                            );
+                          }),
+                      SafeArea(
+                        minimum: EdgeInsets.only(bottom: 20),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              StreamBuilder<double>(
+                                  stream: _blocMap.measurement,
+                                  builder: (context, snapshot) {
+                                    final measurement = snapshot.data;
+                                    if (measurement != null) {
+                                      final mString = _blocMap.currentMode ==
+                                              BtnsMode.measureArea
+                                          ? "${measurement.toStringAsFixed(2)} ha"
+                                          : "${measurement.toStringAsFixed(2)} m";
+                                      return Text(mString);
+                                    } else {
+                                      return Container(height: 0);
+                                    }
+                                  }),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  MButton(
+                                    onPressed: _blocMap.switchMapType,
+                                    icon: Icons.map,
+                                    isActive: mapData?.isSatelliteView == true,
+                                  ),
+                                  MButton(
+                                    onPressed: _goToCurrentPosition,
+                                    icon: Icons.location_on,
+                                  ),
+                                  MButton(
+                                    onPressed: _blocMap.onFountainsBtnClicked,
+                                    isActive: mapData?.showFountains != false,
+                                    icon: Icons.invert_colors,
+                                  ),
+                                  MButton(
+                                    onPressed: _blocMap.onLabelsBtnClicked,
+                                    isActive: mapData?.showLabels != false,
+                                    icon: Icons.local_offer,
+                                  ),
+                                  mapData?.pins?.isNotEmpty == true
+                                      ? MButton(
+                                          onPressed: _blocMap.onBackBtnClick,
+                                          // text: loc.back,
+                                          icon: Icons.undo)
+                                      : Container(height: 0),
+                                  StreamBuilder<bool>(
+                                      stream: _blocMap.isLoading,
+                                      builder: (context, snapshot) {
+                                        final isLoading = snapshot.data == true;
+                                        return MButton(
+                                          onPressed: _blocMap.onRefreshBtnClicked,
+                                          isActive: !isLoading,
+                                          isEnabled: !isLoading,
+                                          icon: Icons.refresh,
+                                        );
+                                      }),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SafeArea(
+                        minimum: EdgeInsets.only(top: 28),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: StreamBuilder<BtnsMode>(
+                              stream: _blocMap.mode,
+                              builder: (context, snapshot) {
+                                final mode = snapshot.data;
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        MButton(
+                                          onPressed: _blocMap.onMeasurementClick,
+                                          icon: mode == BtnsMode.measureDistance
+                                              ? Icons.straighten
+                                              : Icons.square_foot,
+                                          isActive: mode ==
+                                                  BtnsMode.measureArea ||
+                                              mode == BtnsMode.measureDistance,
+                                        ),
+                                        FutureBuilder<bool>(
+                                            future: Prefs.getLoginResponse()
+                                                .then((r) {
+                                              print("login response: $r");
+                                              return r.admin;
+                                            }),
+                                            builder: (context, snapshot) {
+                                              final isAdmin =
+                                                  snapshot.data == /*true*/ false;
+                                              return isAdmin &&
+                                                      _blocMap.hasFieldInfo
+                                                  ? MButton(
+                                                      onPressed:
+                                                          _onSentenceBtnClick,
+                                                      icon: mode ==
+                                                              BtnsMode
+                                                                  .createSentence
+                                                          ? Icons
+                                                              .location_searching
+                                                          : Icons.edit,
+                                                    )
+                                                  : Container();
+                                            }),
+                                        MButton(
+                                          onPressed:
+                                              _blocMap.onSearchFieldBtnClick,
+                                          icon: Icons.search,
+                                          isActive: mode != BtnsMode.search,
+                                        ),
+                                        MButton(
+                                            onPressed: _onSentenceInboxClick,
+                                            icon: Icons.move_to_inbox),
+                                        MButton(
+                                            onPressed: _logOut,
+                                            icon: Icons.power_settings_new),
+                                      ],
+                                    ),
+                                    Flexible(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 16,
+                                        ),
+                                        child: mode == BtnsMode.search
+                                            ? SearchBox(
+                                                onSubmitted: _blocMap
+                                                    .onFieldsQuerySubmitted,
+                                                onChanged:
+                                                    _blocMap.onFieldsQueryChanged,
+                                                child: Flexible(
+                                                  child:
+                                                      StreamBuilder<List<Field>>(
+                                                    stream: _blocMap
+                                                        .searchedFieldSuggestions,
+                                                    builder: (context, snapshot) {
+                                                      final fields =
+                                                          snapshot.data ?? [];
+                                                      return SingleChildScrollView(
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            for (Field field
+                                                                in fields)
+                                                              SearchSuggestionItem(
+                                                                field: field,
+                                                                onSelected: _blocMap
+                                                                    .onSuggestionFieldClick,
+                                                              )
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              )
+                                            : Container(),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }),
+                        ),
+                      ),
+                      StreamBuilder<bool>(
+                          stream: _blocMap.isLoading,
+                          builder: (context, snapshot) {
+                            final isLoading = snapshot.data == true;
+                            return isLoading
+                                ? Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: MProgressIndicator(),
+                                  )
+                                : Container();
+                          }),
+                      Positioned(
+                        right: 24,
+                        bottom: 24,
+                        child: FutureBuilder(
+                          future: _backendReminder(),
+                          builder: (c, snapshot) {
+                            final isProd = snapshot.data;
+                            final style = TextStyle(color: Colors.blueAccent);
+                            return isProd == null
+                                ? Container()
+                                : isProd
+                                    ? Text("P", style: style)
+                                    : Text("S", style: style);
+                          },
+                        ),
+                      )
+                    ],
+                  );
+                }),
+          ],
+        ),
       ),
     );
   }
@@ -657,7 +672,7 @@ class ViewMapState extends State<ViewMap> {
         print('ws, Loading...');
       } else if (state is ActionCableConnected) {
         print('ws, ActionCableConnected');
-        _cable.subscribeToChannel(_channel, /*channelParams: {'uid': data.email, "client": data.token}*/);
+        _cable.subscribeToChannel(_channelName, /*channelParams: {'uid': data.email, "client": data.token}*/);
       } else if (state is ActionCableError) {
         print('ws, Error... ${state.message}');
       } else if (state is ActionCableSubscriptionConfirmed) {

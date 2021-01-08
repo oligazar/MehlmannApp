@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/api/api_client.dart';
 import 'package:mahlmann_app/common/date_formatter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
+import 'package:mahlmann_app/common/interfaces/exception_handleable.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
@@ -16,7 +17,7 @@ import 'package:mahlmann_app/common/extensions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mt;
 import 'package:rxdart/rxdart.dart' as rx;
 
-class BlocMap extends Disposable {
+class BlocMap extends ExceptionHandleable implements Disposable  {
   // Try GetIt sometimes for this things!
   final _db = DbClient();
   final _api = ApiClient();
@@ -35,6 +36,10 @@ class BlocMap extends Disposable {
   final _searchedFields = Set<Field>(); // orange
   final _fieldsGroup = Set<Field>(); // red
   final _inboxFields = Set<Field>(); // red
+
+  final _exception = rx.BehaviorSubject<Exception>();
+  @override
+  Stream<Exception> get exception => _exception.stream;
 
   Stream<MapData> get mapData => _mapData.stream
       .debounce((_) => rx.TimerStream(true, Duration(milliseconds: 400)));
@@ -77,6 +82,7 @@ class BlocMap extends Disposable {
     _inboxGroups.close();
     _searchedFieldSuggestions.close();
     _isLoading.close();
+    _exception.close();
   }
 
   void clearInboxFields() {
@@ -223,7 +229,7 @@ class BlocMap extends Disposable {
   }
 
   void onSubmitComment(int fieldId, String text) async {
-    final comment = await _api.createComment(fieldId, text);
+    final comment = await _api.createComment(fieldId, text).catchError(_exception.add);
     if (comment != null) {
       final comments = _fieldComments.value ?? [];
       _fieldComments.value = comments..add(comment);
@@ -251,7 +257,7 @@ class BlocMap extends Disposable {
 
   Future onSendSentence(String sentenceName) async {
     final fieldIds = _fieldsGroup.map((fg) => fg.id).toList();
-    await _api.createGroup(sentenceName, fieldIds);
+    await _api.createGroup(sentenceName, fieldIds).catchError(_exception.add);
     _fieldsGroup.clear();
 
     _updateMapData(
@@ -479,7 +485,7 @@ class BlocMap extends Disposable {
         _fieldInfo.add(field);
         _updateFields();
 
-        final comments = await _api.fetchComments(field.id);
+        final comments = await _api.fetchComments(field.id).catchError(_exception.add);
         _fieldComments.value = comments;
       } else {
         _fieldInfo.add(null);
@@ -527,13 +533,14 @@ class BlocMap extends Disposable {
       await _prepareData();
     } catch (e) {
       print("onRefreshBtnClicked: $e");
+      _exception.add(e);
     } finally {
       _isLoading.add(false);
     }
   }
 
   Future<void> getLastUpdates() async {
-    final response = await _api.fetchObjects(from: await Prefs.lastUpdate);
+    final response = await _api.fetchObjects(from: await Prefs.lastUpdate).catchError(_exception.add);
     await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
 
     await _db.insertFountains(response.fountains.toList(),
