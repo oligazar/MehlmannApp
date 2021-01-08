@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:action_cable_stream/action_cable_stream.dart';
+import 'package:action_cable_stream/action_cable_stream_states.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/app_mahlmann.dart';
@@ -75,8 +78,14 @@ class ViewMapState extends State<ViewMap> {
   StreamSubscription<Field> _fieldInfoSubscription;
   StreamSubscription<Fountain> _fountainInfoSubscription;
 
-  static final CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
+  final String _channel = 'UpdatesChannel';
+
+  String _action_cable_url(String uid, String client) =>
+      'wss://mmg.webapp.is/api/v1/cable?uid=$uid&client=$client';
+  ActionCable _cable;
+
+  static final CameraPosition _mahlmannStation = CameraPosition(
+    target: LatLng(52.80899034485202, 8.146511738331327),
     zoom: 14.4746,
   );
 
@@ -151,6 +160,7 @@ class ViewMapState extends State<ViewMap> {
         );
       }
     });
+    _initActionCable();
     super.initState();
   }
 
@@ -210,13 +220,17 @@ class ViewMapState extends State<ViewMap> {
                             markers:
                                 _buildAllMarkers(mapData, labels, fountains),
                             onCameraMove: (position) async {
-                              final currentZoom = _blocMarkers.currentZoom ?? BlocMarkers.defaultZoom;
-                              if ((position.zoom - currentZoom).abs() > 1 || position.target.isWithinBounds(_blocMarkers.bounds)) {
-                                _blocMarkers.bounds = await _controller.future.then((c) => c.getVisibleRegion());
+                              final currentZoom = _blocMarkers.currentZoom ??
+                                  BlocMarkers.defaultZoom;
+                              if ((position.zoom - currentZoom).abs() > 1 ||
+                                  position.target
+                                      .isWithinBounds(_blocMarkers.bounds)) {
+                                _blocMarkers.bounds = await _controller.future
+                                    .then((c) => c.getVisibleRegion());
                                 _blocMarkers.zoom = position.zoom;
                               }
                             },
-                            initialCameraPosition: _kGooglePlex,
+                            initialCameraPosition: _mahlmannStation,
                             onMapCreated: _onMapCreated,
                             onTap: _blocMap.onMapTap,
                             mapType: mapData?.isSatelliteView == true
@@ -317,12 +331,12 @@ class ViewMapState extends State<ViewMap> {
                                       FutureBuilder<bool>(
                                           future: Prefs.getLoginResponse()
                                               .then((r) {
-                                                print("login response: $r");
-                                                return r.admin;
-                                              }),
+                                            print("login response: $r");
+                                            return r.admin;
+                                          }),
                                           builder: (context, snapshot) {
                                             final isAdmin =
-                                                snapshot.data == /*true*/false;
+                                                snapshot.data == /*true*/ false;
                                             return isAdmin &&
                                                     _blocMap.hasFieldInfo
                                                 ? MButton(
@@ -451,6 +465,8 @@ class ViewMapState extends State<ViewMap> {
     _mapDataSubscription?.cancel();
     _fieldInfoSubscription?.cancel();
     _fountainInfoSubscription?.cancel();
+
+    _cable?.disconnect();
   }
 
   _onMapCreated(GoogleMapController controller) async {
@@ -625,6 +641,39 @@ class ViewMapState extends State<ViewMap> {
         if (mapData?.showLabels != false && labels != null)
           ..._buildMarkers(labels, isFountain: false),
       ].toSet();
+
+  Future _initActionCable() async {
+    final data = await Prefs.getLoginResponse();
+    final url = _action_cable_url(data.email, data.token);
+    print("url: $url");
+    _cable = ActionCable.Stream(url, headers: {
+      "Origin": "https://mmg.webapp.is",
+      "Upgrade": "websocket",
+    });
+    _cable.stream.listen((state) {
+      if (state is ActionCableInitial ||
+          state is ActionCableConnectionLoading ||
+          state is ActionCableSubscribeLoading) {
+        print('ws, Loading...');
+      } else if (state is ActionCableConnected) {
+        print('ws, ActionCableConnected');
+        _cable.subscribeToChannel(_channel, /*channelParams: {'uid': data.email, "client": data.token}*/);
+      } else if (state is ActionCableError) {
+        print('ws, Error... ${state.message}');
+      } else if (state is ActionCableSubscriptionConfirmed) {
+        print('ws, Subscription confirmed');
+      } else if (state is ActionCableSubscriptionRejected) {
+        print('ws, Subscription rejected');
+      } else if (state is ActionCableMessage) {
+        print('ws, Message received ${jsonEncode(state.message)}');
+        _blocMap.getLastUpdates();
+      } else if (state is ActionCableDisconnected) {
+        print('ws, Disconnected');
+      } else {
+        print('Something went wrong');
+      }
+    });
+  }
 }
 
 class SearchSuggestionItem extends StatelessWidget {

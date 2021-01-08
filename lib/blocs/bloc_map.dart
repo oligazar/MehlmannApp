@@ -26,7 +26,8 @@ class BlocMap extends Disposable {
   final _measurement = rx.BehaviorSubject<double>();
   final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
   final _fieldInfo = rx.BehaviorSubject<Field>();
-  final _searchedFieldSuggestions = rx.BehaviorSubject<List<Field>>.seeded([]); // orange
+  final _searchedFieldSuggestions =
+      rx.BehaviorSubject<List<Field>>.seeded([]); // orange
   final _fieldComments = rx.BehaviorSubject<List<Comment>>();
   final _inboxGroups = rx.BehaviorSubject<List<Group>>(); // purple
 
@@ -35,7 +36,9 @@ class BlocMap extends Disposable {
   final _fieldsGroup = Set<Field>(); // red
   final _inboxFields = Set<Field>(); // red
 
-  Stream<MapData> get mapData => _mapData.stream.debounce((_) => rx.TimerStream(true, Duration(milliseconds: 400)));
+  Stream<MapData> get mapData => _mapData.stream
+      .debounce((_) => rx.TimerStream(true, Duration(milliseconds: 400)));
+
   Stream<bool> get isLoading => _isLoading.stream;
 
   Stream<LatLngBounds> get bounds => _bounds.stream;
@@ -49,8 +52,9 @@ class BlocMap extends Disposable {
   Stream<List<Group>> get inboxGroups => _inboxGroups.stream;
 
   Stream<Field> get fieldInfo => _fieldInfo.stream;
-  
-  Stream<List<Field>> get searchedFieldSuggestions => _searchedFieldSuggestions.stream;
+
+  Stream<List<Field>> get searchedFieldSuggestions =>
+      _searchedFieldSuggestions.stream;
 
   bool get hasFieldInfo => _fieldInfo.hasValue;
 
@@ -74,7 +78,7 @@ class BlocMap extends Disposable {
     _searchedFieldSuggestions.close();
     _isLoading.close();
   }
-  
+
   void clearInboxFields() {
     _inboxFields.clear();
     final polygons = _createPolygons();
@@ -96,7 +100,7 @@ class BlocMap extends Disposable {
 
     _updateBounds(searchedFields);
   }
-  
+
   void onSuggestionFieldClick(Field field) async {
     _mode.add(BtnsMode.none);
     _searchedFieldSuggestions.add(null);
@@ -228,10 +232,11 @@ class BlocMap extends Disposable {
 
   void onSentenceInboxClick() async {
     final groups = await _db.queryGroups();
-    final filtered = groups.where((group) => group.name?.isNotEmpty == true).toList();
+    final filtered =
+        groups.where((group) => group.name?.isNotEmpty == true).toList();
     _inboxGroups.value = filtered;
   }
-  
+
   void handleSentence(List<int> fieldIds) async {
     final db = DbClient();
     _inboxFields.clear();
@@ -248,12 +253,12 @@ class BlocMap extends Disposable {
     final fieldIds = _fieldsGroup.map((fg) => fg.id).toList();
     await _api.createGroup(sentenceName, fieldIds);
     _fieldsGroup.clear();
-  
+
     _updateMapData(
       polygons: _createPolygons(),
     );
-  
-    await _refresh();
+
+    await getLastUpdates();
   }
 
   void markCurrentPosition(LatLng latLng) {
@@ -359,19 +364,20 @@ class BlocMap extends Disposable {
   }
 
   Iterable<ModelMarker> _createLabelsMarkers(
-      List<Field> fields, {
-        String id,
-      }) {
+    List<Field> fields, {
+    String id,
+  }) {
     return [
       for (Field f in fields)
-        if (f.centroid != null) ModelMarker(
-        id: id ?? "markerId-${f.centroid.lat}-${f.centroid.lng}",
-        title: f.name,
-        subTitle: "${f.areaSize}",
-        latLng: LatLng(f.centroid.lat, f.centroid.lng),
-        hue: BitmapDescriptor.hueBlue,
-        // color: f.name,
-      )
+        if (f.centroid != null)
+          ModelMarker(
+            id: id ?? "markerId-${f.centroid.lat}-${f.centroid.lng}",
+            title: f.name,
+            subTitle: "${f.areaSize}",
+            latLng: LatLng(f.centroid.lat, f.centroid.lng),
+            hue: BitmapDescriptor.hueBlue,
+            // color: f.name,
+          )
     ].toSet();
   }
 
@@ -379,14 +385,12 @@ class BlocMap extends Disposable {
     if (points?.isEmpty == true) return null;
     final southwestLat = points.map((p) => p.latitude).reduce(
         (value, element) => value < element ? value : element); // smallest
-    final southwestLon = points
-        .map((p) => p.longitude)
-        .reduce((value, element) => value < element ? value : element); // smallest
+    final southwestLon = points.map((p) => p.longitude).reduce(
+        (value, element) => value < element ? value : element); // smallest
     final northeastLat = points.map((p) => p.latitude).reduce(
         (value, element) => value > element ? value : element); // biggest
-    final northeastLon = points
-        .map((p) => p.longitude)
-        .reduce((value, element) => value > element ? value : element); // biggest
+    final northeastLon = points.map((p) => p.longitude).reduce(
+        (value, element) => value > element ? value : element); // biggest
     return LatLngBounds(
         southwest: LatLng(southwestLat, southwestLon),
         northeast: LatLng(northeastLat, northeastLon));
@@ -454,8 +458,7 @@ class BlocMap extends Disposable {
 
   void _updateBounds(Iterable<Field> fields) {
     final coordinates = fields
-        .expand(
-            (f) => f.coordinates.map((c) => LatLng(c.lat, c.lng)))
+        .expand((f) => f.coordinates.map((c) => LatLng(c.lat, c.lng)))
         .toList();
     final bounds = _createBounds(coordinates);
     // update bounds
@@ -516,11 +519,11 @@ class BlocMap extends Disposable {
     try {
       final response = await _api.fetchObjects();
       await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
-  
+
       await _db.insertFountains(response.fountains.toList());
       await _db.insertFields(response.fields.toList());
       await _db.insertGroups(response.groups.toList());
-  
+
       await _prepareData();
     } catch (e) {
       print("onRefreshBtnClicked: $e");
@@ -529,11 +532,12 @@ class BlocMap extends Disposable {
     }
   }
 
-  Future<void> _refresh() async {
+  Future<void> getLastUpdates() async {
     final response = await _api.fetchObjects(from: await Prefs.lastUpdate);
     await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
-  
-    await _db.insertFountains(response.fountains.toList(), shouldClearTable: false);
+
+    await _db.insertFountains(response.fountains.toList(),
+        shouldClearTable: false);
     await _db.insertFields(response.fields.toList(), shouldClearTable: false);
     await _db.insertGroups(response.groups.toList(), shouldClearTable: false);
   }

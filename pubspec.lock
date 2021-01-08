@@ -8,6 +8,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "13.0.0"
+  action_cable_stream:
+    dependency: "direct main"
+    description:
+      name: action_cable_stream
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.3"
   analyzer:
     dependency: "direct overridden"
     description:
