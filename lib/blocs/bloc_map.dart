@@ -540,12 +540,23 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
   }
 
   Future<void> getLastUpdates() async {
-    final response = await _api.fetchObjects(from: await Prefs.lastUpdate).catchError(_exception.add);
-    await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
+    _isLoading.add(true);
+    try {
+      final response = await _api.fetchObjects(from: await Prefs.lastUpdate);
+      await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
+  
+      await _db.insertFountains(response.fountains.toList(),
+          shouldClearTable: false);
+      await _db.insertFields(response.fields.toList(), shouldClearTable: false);
+      await _db.insertGroups(response.groups.toList(), shouldClearTable: false);
 
-    await _db.insertFountains(response.fountains.toList(),
-        shouldClearTable: false);
-    await _db.insertFields(response.fields.toList(), shouldClearTable: false);
-    await _db.insertGroups(response.groups.toList(), shouldClearTable: false);
+      await _prepareData();
+    } catch (e) {
+      print("getLastUpdates: $e");
+      _exception.add(e);
+    } finally {
+      _isLoading.add(false);
+    }
+    
   }
 }

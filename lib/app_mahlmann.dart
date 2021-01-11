@@ -69,7 +69,7 @@ class _AppMahlmannState extends State<AppMahlmann> {
     return _AppMahlmann(
       state: this,
       child: _isAuthorized == null
-          ? ViewPreloader()
+          ? Container()
           : _isAuthorized
               ? _showPreloader
                   ? ScreenPreloader(() {

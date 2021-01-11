@@ -26,17 +26,20 @@ class OneActionDialog extends StatelessWidget {
 				child: Column(
 					crossAxisAlignment: CrossAxisAlignment.start,
 					children: <Widget>[
-						Padding(
-							padding: EdgeInsets.symmetric(horizontal: _padding),
-							child: Text(
-								this.title,
-								style: TextStyle(
-									color: Colors.black,
-									fontSize: 22,
-									fontWeight: FontWeight.w600,
-								),
-								textAlign: TextAlign.center,
-							),
+						Align(
+							alignment: Alignment.topCenter,
+						  child: Padding(
+						  	padding: EdgeInsets.symmetric(horizontal: _padding),
+						  	child: Text(
+						  		this.title,
+						  		style: TextStyle(
+						  			color: Colors.black,
+						  			fontSize: 22,
+						  			fontWeight: FontWeight.w600,
+						  		),
+						  		textAlign: TextAlign.center,
+						  	),
+						  ),
 						),
 						Container(height: 6,),
 						message != null ? Padding(

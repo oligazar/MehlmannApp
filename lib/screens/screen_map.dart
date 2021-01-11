@@ -83,7 +83,7 @@ class ViewMapState extends State<ViewMap> {
 
   final String _channelName = 'UpdatesChannel';
 
-  String _action_cable_url(String uid, String client) =>
+  String _actionCableUrl(String uid, String client) =>
       'wss://$baseAuthority/api/v1/cable?uid=$uid&client=$client';
   ActionCable _cable;
 
@@ -659,10 +659,10 @@ class ViewMapState extends State<ViewMap> {
 
   Future _initActionCable() async {
     final data = await Prefs.getLoginResponse();
-    final url = _action_cable_url(data.email, data.token);
+    final url = _actionCableUrl(data.email, data.token);
     print("url: $url");
     _cable = ActionCable.Stream(url, headers: {
-      "Origin": "https://mmg.webapp.is",
+      "Origin": "https://$baseAuthority",
       "Upgrade": "websocket",
     });
     _cable.stream.listen((state) {
