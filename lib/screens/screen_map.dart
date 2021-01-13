@@ -31,6 +31,7 @@ import 'package:mahlmann_app/widgets/exception_handler.dart';
 import 'package:mahlmann_app/widgets/m_button.dart';
 import 'package:mahlmann_app/widgets/m_progress_indicator.dart';
 import 'package:mahlmann_app/widgets/m_text_field.dart';
+import 'package:mahlmann_app/widgets/marker_generator.dart';
 import 'package:mahlmann_app/widgets/search_box.dart';
 import 'package:mahlmann_app/widgets/dialogs/select_sentence_dialog.dart';
 import 'package:provider/provider.dart';
@@ -77,7 +78,8 @@ class ViewMap extends StatefulWidget {
 class ViewMapState extends State<ViewMap> {
   Completer<GoogleMapController> _controller = Completer();
   StreamSubscription _mapDataSubscription;
-  BitmapDescriptor iconDrop;
+  BitmapDescriptor _iconDrop;
+  BitmapDescriptor _iconCrossHair;
   StreamSubscription<Field> _fieldInfoSubscription;
   StreamSubscription<Fountain> _fountainInfoSubscription;
 
@@ -100,6 +102,16 @@ class ViewMapState extends State<ViewMap> {
 
   @override
   void initState() {
+    MarkerGenerator(180)
+        .createBitmapDescriptorFromIconData(
+      Icons.location_searching,
+      Colors.red,
+      Colors.transparent,
+      Colors.transparent,
+    )
+        .then((bitmap) {
+      _iconCrossHair = bitmap;
+    });
     BitmapDescriptor.fromAssetImage(
       ImageConfiguration(
         // devicePixelRatio: 5,
@@ -107,7 +119,7 @@ class ViewMapState extends State<ViewMap> {
       ),
       Platform.isIOS ? 'assets/images/drop_ios.png' : 'assets/images/drop.png',
     ).then((bitmap) {
-      iconDrop = bitmap;
+      _iconDrop = bitmap;
     });
     _fieldInfoSubscription = _blocMap.fieldInfo.listen((field) async {
       if (field != null) {
@@ -175,10 +187,10 @@ class ViewMapState extends State<ViewMap> {
             context: context,
             barrierDismissible: false,
             builder: (BuildContext context) => OneActionDialog(
-              title: context.loc.errorTitle ?? "",
-              message: e.toString(),
-              btnTitle: context.loc.btnOk,
-            ));
+                  title: context.loc.errorTitle ?? "",
+                  message: e.toString(),
+                  btnTitle: context.loc.btnOk,
+                ));
       },
       child: Scaffold(
         body: Stack(
@@ -208,7 +220,8 @@ class ViewMapState extends State<ViewMap> {
                             return ClusterBuilder<ModelMarker>(
                                 zoom: zoom,
                                 clusterables: fountainModels?.toList() ?? [],
-                                createCluster: (cluster, lng, lat) => ModelMarker(
+                                createCluster: (cluster, lng, lat) =>
+                                    ModelMarker(
                                       id: cluster.id.toString(),
                                       latLng: LatLng(lat, lng),
                                       isCluster: cluster.isCluster,
@@ -306,7 +319,8 @@ class ViewMapState extends State<ViewMap> {
                                       builder: (context, snapshot) {
                                         final isLoading = snapshot.data == true;
                                         return MButton(
-                                          onPressed: _blocMap.onRefreshBtnClicked,
+                                          onPressed:
+                                              _blocMap.onRefreshBtnClicked,
                                           isActive: !isLoading,
                                           isEnabled: !isLoading,
                                           icon: Icons.refresh,
@@ -330,11 +344,13 @@ class ViewMapState extends State<ViewMap> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         MButton(
-                                          onPressed: _blocMap.onMeasurementClick,
+                                          onPressed:
+                                              _blocMap.onMeasurementClick,
                                           icon: mode == BtnsMode.measureDistance
                                               ? Icons.straighten
                                               : Icons.square_foot,
@@ -350,7 +366,8 @@ class ViewMapState extends State<ViewMap> {
                                             }),
                                             builder: (context, snapshot) {
                                               final isAdmin =
-                                                  snapshot.data == /*true*/ false;
+                                                  snapshot.data == /*true*/
+                                                      false;
                                               return isAdmin &&
                                                       _blocMap.hasFieldInfo
                                                   ? MButton(
@@ -359,8 +376,7 @@ class ViewMapState extends State<ViewMap> {
                                                       icon: mode ==
                                                               BtnsMode
                                                                   .createSentence
-                                                          ? Icons
-                                                              .location_searching
+                                                          ? Icons.add
                                                           : Icons.edit,
                                                     )
                                                   : Container();
@@ -389,14 +405,15 @@ class ViewMapState extends State<ViewMap> {
                                             ? SearchBox(
                                                 onSubmitted: _blocMap
                                                     .onFieldsQuerySubmitted,
-                                                onChanged:
-                                                    _blocMap.onFieldsQueryChanged,
+                                                onChanged: _blocMap
+                                                    .onFieldsQueryChanged,
                                                 child: Flexible(
-                                                  child:
-                                                      StreamBuilder<List<Field>>(
+                                                  child: StreamBuilder<
+                                                      List<Field>>(
                                                     stream: _blocMap
                                                         .searchedFieldSuggestions,
-                                                    builder: (context, snapshot) {
+                                                    builder:
+                                                        (context, snapshot) {
                                                       final fields =
                                                           snapshot.data ?? [];
                                                       return SingleChildScrollView(
@@ -516,9 +533,11 @@ class ViewMapState extends State<ViewMap> {
   Iterable<Marker> _buildMarkers(
     Iterable<ModelMarker> models, {
     bool isFountain = true,
+    bool isPin = false,
   }) {
     // print("_buildMarkers, models: $models");
     final markers = models?.map((model) {
+      final anchor = isPin ? const Offset(0.5, 0.5) : const Offset(0.5, 1.0);
           return Marker(
             markerId: MarkerId(model.id),
             position: model.latLng,
@@ -561,14 +580,17 @@ class ViewMapState extends State<ViewMap> {
                     title: model.title);
               }
             },
+            anchor: anchor,
             icon: isFountain
                 ? model.isCluster
-                    ? model.icon ?? iconDrop
-                    : iconDrop
+                    ? model.icon ?? _iconDrop
+                    : _iconDrop
                 : model.icon != null
                     ? model.icon
-                    : BitmapDescriptor.defaultMarkerWithHue(
-                        BitmapDescriptor.hueRed),
+                    : isPin
+                        ? _iconCrossHair
+                        : BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueRed),
           );
         }) ??
         <Marker>[];
@@ -650,7 +672,7 @@ class ViewMapState extends State<ViewMap> {
         if (mapData?.showFountains != false && fountains?.isNotEmpty == true)
           ..._buildMarkers(fountains),
         if (mapData?.pins?.isNotEmpty == true)
-          ..._buildMarkers(mapData.pins, isFountain: false),
+          ..._buildMarkers(mapData.pins, isFountain: false, isPin: true),
         if (mapData?.currentPosition != null)
           ..._buildMarkers([mapData.currentPosition], isFountain: false),
         if (mapData?.showLabels != false && labels != null)
@@ -672,7 +694,9 @@ class ViewMapState extends State<ViewMap> {
         print('ws, Loading...');
       } else if (state is ActionCableConnected) {
         print('ws, ActionCableConnected');
-        _cable.subscribeToChannel(_channelName, /*channelParams: {'uid': data.email, "client": data.token}*/);
+        _cable.subscribeToChannel(
+          _channelName, /*channelParams: {'uid': data.email, "client": data.token}*/
+        );
       } else if (state is ActionCableError) {
         print('ws, Error... ${state.message}');
       } else if (state is ActionCableSubscriptionConfirmed) {
