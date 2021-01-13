@@ -8,6 +8,7 @@ import 'package:mahlmann_app/models/login_response.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 
 class ApiClient extends ApiBase {
+  
   Future<LoginResponse> logIn(String email, String password) async {
     print('logIn');
     final url = buildUri("/api/v1/auth/sign_in");
@@ -23,6 +24,7 @@ class ApiClient extends ApiBase {
       email: map['uid'].firstOrNull,
       expiry: map['expiry'].firstOrNull?.toIntOrNull,
       admin: map['admin'].firstOrNull?.toBoolOrNull,
+      version: response.data["version"],
     );
   }
 

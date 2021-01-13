@@ -85,6 +85,8 @@ class MLocalizations {
   String get production => "Herstellung";
 
   String get errorTitle => "Fehler";
+
+  String get wrongVersion => "Es ist ein Fehler aufgetreten. Bitte aktualisieren Sie die App auf die neuste Version.";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

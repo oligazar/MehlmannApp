@@ -8,6 +8,7 @@
 
 const String STAG = 'stag';
 const String PROD = 'prod';
+const String API_VERSION = "1.2.9._";
 
 const AUTHORITY_PRODUCTION = "mm.maehlmann-gemuesebau.de"; // production
 const AUTHORITY_STAGING = "mmg.webapp.is";

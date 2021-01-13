@@ -35,6 +35,7 @@ class _ViewLoginState extends State<ViewLogin> {
   bool _obscureText = true;
 
   BlocLogin get _bloc => context.provide<BlocLogin>();
+
   MLocalizations get _loc => context.loc;
 
   @override
@@ -59,12 +60,11 @@ class _ViewLoginState extends State<ViewLogin> {
                         child: _formUI(),
                       ),
                       StreamBuilder<bool>(
-                        stream: _bloc.showBackendSettings,
-                        builder: (context, snapshot) {
-                          final shouldShow = snapshot.data == true;
-                          return shouldShow ? _backendSetting() : Container();
-                        }
-                      ),
+                          stream: _bloc.showBackendSettings,
+                          builder: (context, snapshot) {
+                            final shouldShow = snapshot.data == true;
+                            return shouldShow ? _backendSetting() : Container();
+                          }),
                       const SizedBox(height: 20),
                       _progressIndication(result),
                       const SizedBox(height: 20),
@@ -150,10 +150,14 @@ class _ViewLoginState extends State<ViewLogin> {
   }
 
   Widget _progressIndication(ResponseWrapper result) {
+    final errorText = result?.error;
     switch (result?.state) {
       case WrapperState.ERROR:
         return Container(
-          child: Text(context.loc.errorIncorrectPassword),
+          child: Text(
+            errorText ?? context.loc.errorIncorrectPassword,
+            style: TextStyle(color: Colors.red),
+          ),
         );
       case WrapperState.LOADING:
         return _buildProgressIndicator();
@@ -181,7 +185,7 @@ class _ViewLoginState extends State<ViewLogin> {
 
   void _tryLogin() async {
     if (_validateAndSave()) {
-      final resp = await _bloc.auth();
+      final resp = await _bloc.auth(context);
       AppMahlmann.of(context).setIsAuthorized(resp?.token != null);
     } else {
       setState(() {
@@ -206,14 +210,12 @@ class _ViewLoginState extends State<ViewLogin> {
         dialogTitle: _loc.summBackend,
         items: [
           PrefRadioItem(value: STAG, titleMaker: () => _loc.staging),
-          PrefRadioItem(
-              value: PROD, titleMaker: () => _loc.production),
+          PrefRadioItem(value: PROD, titleMaker: () => _loc.production),
         ],
         onSelected: (item) {
           print('on Changed: ${item.value}');
-          baseAuthority = item.value == PROD
-              ? AUTHORITY_PRODUCTION
-              : AUTHORITY_STAGING;
+          baseAuthority =
+              item.value == PROD ? AUTHORITY_PRODUCTION : AUTHORITY_STAGING;
         },
       ),
     );

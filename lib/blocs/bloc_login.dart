@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:mahlmann_app/common/api/api_client.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/prefs.dart';
@@ -5,6 +6,7 @@ import 'package:mahlmann_app/models/response_wrapper.dart';
 import 'package:rxdart/rxdart.dart' as rx;
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/models/login_response.dart';
+import 'package:mahlmann_app/common/extensions.dart';
 
 class BlocLogin extends Disposable {
   String _email;
@@ -27,19 +29,24 @@ class BlocLogin extends Disposable {
 		_showBackendSettings.value = val.startsWith(TEST_PREFIX);
 	}
 
-  Future<LoginResponse> auth() async {
+  Future<LoginResponse> auth(BuildContext context) async {
 	  print("email: $_email, pass: $pass");
 	  _userLogin.add(ResponseWrapper.loading());
 	
 	  return _api.logIn(_email, pass).then((resp) {
 		  print("LoginResponse: $resp");
 		  // save token to shared prefs
-		  Prefs.saveLoginResponse(resp);
-		  _userLogin.add(ResponseWrapper.success(resp));
-		  return resp;
+		  if (resp.version == API_VERSION) {
+			  Prefs.saveLoginResponse(resp);
+			  _userLogin.add(ResponseWrapper.success(resp));
+			  return resp;
+		  } else {
+			  _userLogin.add(ResponseWrapper.error(context.loc.wrongVersion));
+			  return null;
+		  }
 	  }).catchError((error) {
 		  print(error);
-		  _userLogin.add(ResponseWrapper.error(error.toString()));
+		  _userLogin.add(ResponseWrapper.error(null));
 		  return null;
 	  });
   }
