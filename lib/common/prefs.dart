@@ -13,7 +13,7 @@ class Prefs {
 	  final pref = await sp;
 	  return pref.setString(PREF_LAST_UPDATE, timeString);
   }
-	
+  
 	static Future<bool> get isProdPref async {
 		final pref = await sp;
 		final backend = pref.getString(PREF_BACKEND);
@@ -56,5 +56,6 @@ class Prefs {
 		pref.remove(PREF_EMAIL);
 		pref.remove(PREF_EXPIRY);
 		pref.remove(PREF_ADMIN);
+		pref.remove(PREF_LAST_UPDATE);
 	}
 }

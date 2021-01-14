@@ -24,7 +24,7 @@ class ApiClient extends ApiBase {
       email: map['uid'].firstOrNull,
       expiry: map['expiry'].firstOrNull?.toIntOrNull,
       admin: map['admin'].firstOrNull?.toBoolOrNull,
-      version: response.data["version"],
+      version: response.data["data"]["version"],
     );
   }
 
