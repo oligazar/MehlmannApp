@@ -489,7 +489,6 @@ class ViewMapState extends State<ViewMap> {
                                 ? SafeArea(
                                     child: Center(
                                       child: _buildCrossHair(
-                                          25.4,
                                           () => _blocMap
                                               .onAddPin(_currentPosition)),
                                     ),
@@ -506,7 +505,6 @@ class ViewMapState extends State<ViewMap> {
   }
 
   Widget _buildCrossHair(
-    double distance,
     GestureTapCallback onTap, {
     double width = 140,
     double height = 140,
@@ -530,19 +528,25 @@ class ViewMapState extends State<ViewMap> {
           Positioned(
             left: width / 2,
             top: (height / 3.5) - textShift,
-            child: Container(
-              height: textShift,
-              decoration: BoxDecoration(
-                color: Colors.black45,
-                border: Border.all(
-                  color: color1,
-                  width: 1.5,
-                ),
-              ),
-              child: Text("${distance.toStringAsFixed(1)} m",
-                  style: TextStyle(
-                    color: Colors.white,
-                  )),
+            child: StreamBuilder<double>(
+              stream: _blocMap.lastSegmentMeasurement,
+              builder: (context, snapshot) {
+                final lastSegmentDistance = snapshot.data;
+                return lastSegmentDistance != null ? Container(
+                  height: textShift,
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    border: Border.all(
+                      color: color1,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Text("${lastSegmentDistance?.toStringAsFixed(1)} m",
+                      style: TextStyle(
+                        color: Colors.white,
+                      )),
+                ) : Container();
+              }
             ),
           ),
           Center(
