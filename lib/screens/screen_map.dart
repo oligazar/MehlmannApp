@@ -81,7 +81,6 @@ class ViewMapState extends State<ViewMap> {
   Completer<GoogleMapController> _controller = Completer();
   StreamSubscription _mapDataSubscription;
   BitmapDescriptor _iconDrop;
-  BitmapDescriptor _iconCrossHair;
   StreamSubscription<Field> _fieldInfoSubscription;
   StreamSubscription<Fountain> _fountainInfoSubscription;
 
@@ -104,16 +103,6 @@ class ViewMapState extends State<ViewMap> {
 
   @override
   void initState() {
-    MarkerGenerator(180)
-        .createBitmapDescriptorFromIconData(
-      Icons.location_searching,
-      Colors.red,
-      Colors.transparent,
-      Colors.transparent,
-    )
-        .then((bitmap) {
-      _iconCrossHair = bitmap;
-    });
     BitmapDescriptor.fromAssetImage(
       ImageConfiguration(
         // devicePixelRatio: 5,
@@ -299,7 +288,7 @@ class ViewMapState extends State<ViewMap> {
                                   MButton(
                                     onPressed: _blocMap.switchMapType,
                                     icon: Icons.map,
-                                    isActive: mapData?.isSatelliteView == true,
+                                    isActive: mapData?.isSatelliteView != true,
                                   ),
                                   MButton(
                                     onPressed: _goToCurrentPosition,
@@ -307,12 +296,12 @@ class ViewMapState extends State<ViewMap> {
                                   ),
                                   MButton(
                                     onPressed: _blocMap.onFountainsBtnClicked,
-                                    isActive: mapData?.showFountains != false,
+                                    isActive: mapData?.showFountains != true,
                                     icon: Icons.invert_colors,
                                   ),
                                   MButton(
                                     onPressed: _blocMap.onLabelsBtnClicked,
-                                    isActive: mapData?.showLabels != false,
+                                    isActive: mapData?.showLabels != true,
                                     icon: Icons.local_offer,
                                   ),
                                   mapData?.pins?.isNotEmpty == true
@@ -483,9 +472,7 @@ class ViewMapState extends State<ViewMap> {
                           builder: (context, snapshot) {
                             final mode = snapshot.data;
                             return mode == BtnsMode.measureArea ||
-                                    mode == BtnsMode.measureDistance ||
-                                    mode == BtnsMode.searchArea ||
-                                    mode == BtnsMode.searchDistance
+                                    mode == BtnsMode.measureDistance
                                 ? SafeArea(
                                     child: Center(
                                       child: _buildCrossHair(

@@ -184,6 +184,7 @@ class _SearchBoxLatLngsState extends State<SearchBoxLatLngs> {
       onChanged: widget.onChanged,
       textCapitalization: TextCapitalization.sentences,
       validator: validator,
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
       onSaved: (value) {
         if (onSaved == null) return;
         final dotified = value.dotifyIfNumber();

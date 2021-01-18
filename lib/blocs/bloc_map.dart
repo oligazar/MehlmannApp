@@ -73,7 +73,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	BtnsMode get currentMode => _mode.value;
 	
 	BlocMap() {
-		// _prepareData();
+		_prepareData();
 	}
 	
 	@override
