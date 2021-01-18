@@ -11,6 +11,9 @@ class BtnsMode extends EnumClass {
 	static const BtnsMode measureDistance = _$measureDistance;
 	
 	static const BtnsMode search = _$search;
+	static const BtnsMode searchDistance = _$searchDistance;
+	static const BtnsMode searchArea = _$searchArea;
+	
 	static const BtnsMode selectSentence = _$selectSentence;
 	static const BtnsMode createSentence = _$createSentence; // grouping
 	

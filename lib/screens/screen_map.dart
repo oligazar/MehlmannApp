@@ -22,6 +22,7 @@ import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
+import 'package:mahlmann_app/widgets/cross_hair.dart';
 import 'package:mahlmann_app/widgets/dialogs/info_row.dart';
 import 'package:mahlmann_app/widgets/dialogs/m_dialog.dart';
 import 'package:mahlmann_app/widgets/dialogs/one_action_dialog.dart';
@@ -32,194 +33,13 @@ import 'package:mahlmann_app/widgets/m_button.dart';
 import 'package:mahlmann_app/widgets/m_progress_indicator.dart';
 import 'package:mahlmann_app/widgets/m_text_field.dart';
 import 'package:mahlmann_app/widgets/marker_generator.dart';
-import 'package:mahlmann_app/widgets/search_box.dart';
+import 'package:mahlmann_app/widgets/search_box_fields.dart';
 import 'package:mahlmann_app/widgets/dialogs/select_sentence_dialog.dart';
+import 'package:mahlmann_app/widgets/search_box_lat_lngs.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:post_frame_image_builder/post_frame_image_builder.dart';
 import 'package:cluster_builder/cluster_builder.dart';
-
-class CrossHair extends CustomPainter {
-  static double convertRadiusToSigma(double radius) {
-    return radius * 0.57735 + 0.5;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final redPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = Colors.red;
-
-    final greenPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = Colors.green;
-
-    final greenFillPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = Colors.green;
-
-    // center of the canvas is (x,y) => (width/2, height/2)
-    final w = size.width;
-    final h = size.height;
-
-    final s1 = 20.0;
-    final s2 = 40.0;
-
-    // canvas.drawShadow(Offset(s1, s1), Offset(s2, s2), redPaint);
-
-    final s3 = 35.0;
-    final hw = w / 2;
-    final hh = h / 2;
-
-    final redPath = Path()
-      ..addPolygon([Offset(s1, s1), Offset(s2, s2)], false)
-      ..addPolygon([Offset(w - s2, s2), Offset(w - s1, s1)], false)
-      ..addPolygon([Offset(s1, h - s1), Offset(s2, h - s2)], false)
-      ..addPolygon([Offset(w - s2, h - s2), Offset(w - s1, h - s1)], false)
-      ..addPolygon([Offset(hw, s3), Offset(hw, 0)], false)
-      ..addPolygon([Offset(w - s3, hh), Offset(w, hw)], false)
-      ..addPolygon([Offset(hw, h - s3), Offset(hw, h)], false)
-      ..addPolygon([Offset(0, hh), Offset(35, hh)], false);
-
-    final rectOutline = Rect.fromCenter(
-        center: Offset(w / 2, h / 2), width: w - s1 * 2, height: h - s1 * 2);
-    final pathOutline = Path()..addRect(rectOutline);
-
-    final s4 = 4.0;
-    final rect1 =
-        Rect.fromCenter(center: Offset(hw, hh - s4), width: s4, height: s4);
-    final rect2 =
-        Rect.fromCenter(center: Offset(hw + s4, hh), width: s4, height: s4);
-    final rect3 =
-        Rect.fromCenter(center: Offset(hw, hh + s4), width: s4, height: s4);
-    final rect4 =
-        Rect.fromCenter(center: Offset(hw - s4, hh), width: s4, height: s4);
-
-    final greenPath = Path()
-      ..addRect(rect1)
-      ..addRect(rect2)
-      ..addRect(rect3)
-      ..addRect(rect4);
-
-    // draw shadow
-    _drawShadow(canvas, greenPath);
-    _drawShadow(canvas, pathOutline);
-    _drawShadow(canvas, redPath);
-
-    canvas.drawPath(
-      redPath,
-      redPaint,
-    );
-
-    canvas.drawPath(
-      greenPath,
-      greenFillPaint,
-    );
-
-    canvas.drawPath(
-      pathOutline,
-      greenPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-
-  void _drawShadow(Canvas canvas, Path path) {
-    canvas.drawPath(
-      path.shift(Offset(1, 1)),
-      Paint()
-        ..color = Colors.black.withAlpha(60)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..maskFilter =
-            MaskFilter.blur(BlurStyle.normal, convertRadiusToSigma(0.5)),
-    );
-  }
-
-//   @override
-//   void paint(Canvas canvas, Size size) {
-//     final redPaint = Paint()
-//       ..style = PaintingStyle.stroke
-//       ..strokeWidth = 1
-//       ..color = Colors.red;
-//
-//     final greenPaint = Paint()
-//       ..style = PaintingStyle.stroke
-//       ..strokeWidth = 1.5
-//       ..color = Colors.green;
-//
-//     final greenFillPaint = Paint()
-//       ..style = PaintingStyle.fill
-//       ..color = Colors.green;
-//
-//     // center of the canvas is (x,y) => (width/2, height/2)
-//     final w = size.width;
-//     final h = size.height;
-//
-//     final s1 = 20.0;
-//     final s2 = 40.0;
-//     canvas.drawLine(Offset(s1, s1), Offset(s2, s2), redPaint);
-//     canvas.drawLine(Offset(w - s2, s2), Offset(w - s1, s1), redPaint);
-//     canvas.drawLine(Offset(s1, h - s1), Offset(s2, h - s2), redPaint);
-//     canvas.drawLine(Offset(w - s2, h - s2), Offset(w - s1, h - s1), redPaint);
-//
-//     canvas.drawPath(
-//         Path()
-//           ..addRect(
-//               Rect.fromPoints(Offset(-15, -15), Offset(size.width+15, size.height+15)))
-//           ..addOval(
-//               Rect.fromPoints(Offset(0, 0), Offset(size.width, size.height)))
-//           ..fillType = PathFillType.evenOdd,
-//         Paint()
-//           ..color= Colors.black.withAlpha(110)
-//           ..maskFilter = MaskFilter.blur(BlurStyle.normal, convertRadiusToSigma(3))
-//     );
-//
-//     // canvas.drawShadow(Offset(s1, s1), Offset(s2, s2), redPaint);
-//
-//     final s3 = 35.0;
-//     final hw = w/2;
-//     final hh = h/2;
-//     canvas.drawLine(Offset(hw, s3), Offset(hw, 0), redPaint);
-//     canvas.drawLine(Offset(w - s3, hh), Offset(w, hw), redPaint);
-//     canvas.drawLine(Offset(hw, h - s3), Offset(hw, h), redPaint);
-//     canvas.drawLine(Offset(0, hh), Offset(35, hh), redPaint);
-//
-//     canvas.drawRect(
-//       Rect.fromCenter(
-//           center: Offset(w / 2, h / 2), width: w - s1 * 2, height: h - s1 * 2),
-//       greenPaint,
-//     );
-//
-//     final s4 = 3.0;
-//     final rect1 = Rect.fromCenter(
-//         center: Offset(hw, hh - s4), width: s4, height: s4);
-//
-//     final greenPath = Path()..addRect(rect1);
-//     canvas.drawRect(
-//       rect1,
-//       greenFillPaint,
-//     );
-//     canvas.drawRect(
-//       Rect.fromCenter(
-//           center: Offset(hw + s4, hh), width: s4, height: s4),
-//       greenFillPaint,
-//     );
-//     canvas.drawRect(
-//       Rect.fromCenter(
-//           center: Offset(hw, hh + s4), width: s4, height: s4),
-//       greenFillPaint,
-//     );
-//     canvas.drawRect(
-//       Rect.fromCenter(
-//           center: Offset(hw - s4, hh), width: s4, height: s4),
-//       greenFillPaint,
-//     );
-//   }
-}
 
 // drawing custom marker on the field: https://github.com/flutter/flutter/issues/26109
 class ScreenMap extends StatelessWidget {
@@ -536,15 +356,19 @@ class ViewMapState extends State<ViewMap> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         MButton(
-                                          onPressed:
-                                              _blocMap.onMeasurementClick,
-                                          icon: mode == BtnsMode.measureDistance
-                                              ? Icons.straighten
-                                              : Icons.square_foot,
-                                          isActive: mode ==
-                                                  BtnsMode.measureArea ||
-                                              mode == BtnsMode.measureDistance,
-                                        ),
+                                            onPressed:
+                                                _blocMap.onMeasurementClick,
+                                            icon:
+                                                mode == BtnsMode.measureDistance ||
+                                                mode == BtnsMode.searchDistance
+                                                    ? Icons.straighten
+                                                    : Icons.square_foot,
+                                            isActive: ![
+                                              BtnsMode.measureArea,
+                                              BtnsMode.measureDistance,
+                                              BtnsMode.searchArea,
+                                              BtnsMode.searchDistance,
+                                            ].contains(mode)),
                                         FutureBuilder<bool>(
                                             future: Prefs.getLoginResponse()
                                                 .then((r) {
@@ -572,7 +396,11 @@ class ViewMapState extends State<ViewMap> {
                                           onPressed:
                                               _blocMap.onSearchFieldBtnClick,
                                           icon: Icons.search,
-                                          isActive: mode != BtnsMode.search,
+                                          isActive: ![
+                                            BtnsMode.search,
+                                            BtnsMode.searchDistance,
+                                            BtnsMode.searchArea,
+                                          ].contains(mode),
                                         ),
                                         MButton(
                                             onPressed: _onSentenceInboxClick,
@@ -589,43 +417,13 @@ class ViewMapState extends State<ViewMap> {
                                           vertical: 16,
                                         ),
                                         child: mode == BtnsMode.search
-                                            ? SearchBox(
-                                                onSubmitted: _blocMap
-                                                    .onFieldsQuerySubmitted,
-                                                onChanged: _blocMap
-                                                    .onFieldsQueryChanged,
-                                                child: Flexible(
-                                                  child: StreamBuilder<
-                                                      List<Field>>(
-                                                    stream: _blocMap
-                                                        .searchedFieldSuggestions,
-                                                    builder:
-                                                        (context, snapshot) {
-                                                      final fields =
-                                                          snapshot.data ?? [];
-                                                      return SingleChildScrollView(
-                                                        child: Column(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            for (Field field
-                                                                in fields)
-                                                              SearchSuggestionItem(
-                                                                field: field,
-                                                                onSelected: _blocMap
-                                                                    .onSuggestionFieldClick,
-                                                              )
-                                                          ],
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                              )
-                                            : Container(),
+                                            ? _buildSearchBoxFields()
+                                            : (mode ==
+                                                        BtnsMode
+                                                            .searchDistance ||
+                                                    mode == BtnsMode.searchArea)
+                                                ? SearchBoxLatLngs()
+                                                : Container(),
                                       ),
                                     ),
                                   ],
@@ -668,8 +466,10 @@ class ViewMapState extends State<ViewMap> {
                                     mode == BtnsMode.measureDistance
                                 ? SafeArea(
                                     child: Center(
-                                      child: _buildCrossHair(() =>
-                                          _blocMap.onMapTap(_currentPosition)),
+                                      child: _buildCrossHair(
+                                          25.4,
+                                          () => _blocMap
+                                              .onMapTap(_currentPosition)),
                                     ),
                                   )
                                 : Container();
@@ -683,8 +483,16 @@ class ViewMapState extends State<ViewMap> {
     );
   }
 
-  Widget _buildCrossHair(GestureTapCallback onTap,
-      {double width = 100, double height = 100}) {
+  Widget _buildCrossHair(
+    double distance,
+    GestureTapCallback onTap, {
+    double width = 140,
+    double height = 140,
+  }) {
+    // const color1 = Color.fromRGBO(108, 255, 0, 1);
+    const color1 = Colors.black54;
+    const color2 = Colors.black54;
+    final textShift = 20.0;
     return Container(
       width: width,
       height: height,
@@ -693,9 +501,26 @@ class ViewMapState extends State<ViewMap> {
           Container(
             width: width,
             height: height,
-            // color: Colors.blue.withOpacity(0.3),
             child: CustomPaint(
-              painter: CrossHair(),
+              painter: const CrossHair(color1, color2),
+            ),
+          ),
+          Positioned(
+            left: width / 2,
+            top: (height / 3.5) - textShift,
+            child: Container(
+              height: textShift,
+              decoration: BoxDecoration(
+                color: Colors.black45,
+                border: Border.all(
+                  color: color1,
+                  width: 1.5,
+                ),
+              ),
+              child: Text("${distance.toStringAsFixed(1)} m",
+                  style: TextStyle(
+                    color: Colors.white,
+                  )),
             ),
           ),
           Center(
@@ -707,21 +532,6 @@ class ViewMapState extends State<ViewMap> {
         ],
       ),
     );
-    // return Container(
-    // 	height: 81,
-    // 	width: 81,
-    // 	decoration: BoxDecoration(
-    // 			color: Colors.transparent,
-    // 			border: Border.all(color: Colors.greenAccent.shade700)),
-    // 	child: Center(
-    // 		child: Container(
-    // 			height: 5,
-    // 			width: 5,
-    // 			decoration: BoxDecoration(
-    // 					border: Border.all(color: Colors.greenAccent.shade700)),
-    // 		),
-    // 	),
-    // );
   }
 
   Future<bool> _backendReminder() async {
@@ -949,6 +759,34 @@ class ViewMapState extends State<ViewMap> {
         print('Something went wrong');
       }
     });
+  }
+
+  _buildSearchBoxFields() {
+    return SearchBoxFields(
+      onSubmitted: _blocMap.onFieldsQuerySubmitted,
+      onChanged: _blocMap.onFieldsQueryChanged,
+      child: Flexible(
+        child: StreamBuilder<List<Field>>(
+          stream: _blocMap.searchedFieldSuggestions,
+          builder: (context, snapshot) {
+            final fields = snapshot.data ?? [];
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (Field field in fields)
+                    SearchSuggestionItem(
+                      field: field,
+                      onSelected: _blocMap.onSuggestionFieldClick,
+                    )
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 

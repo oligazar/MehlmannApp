@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 
-class SearchBox extends StatefulWidget {
+class SearchBoxFields extends StatefulWidget {
   final ValueChanged<String> onSubmitted;
   final ValueChanged<String> onChanged;
   final IconData icon;
@@ -9,7 +9,7 @@ class SearchBox extends StatefulWidget {
   final String initialText;
   final Widget child;
 
-  const SearchBox({
+  const SearchBoxFields({
     Key key,
     this.icon,
     this.hintText,
@@ -20,10 +20,10 @@ class SearchBox extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _SearchBoxState createState() => _SearchBoxState();
+  _SearchBoxFieldsState createState() => _SearchBoxFieldsState();
 }
 
-class _SearchBoxState extends State<SearchBox> {
+class _SearchBoxFieldsState extends State<SearchBoxFields> {
   TextEditingController _controller;
 
   @override

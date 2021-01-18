@@ -87,6 +87,14 @@ class MLocalizations {
   String get errorTitle => "Fehler";
 
   String get wrongVersion => "Es ist ein Fehler aufgetreten. Bitte aktualisieren Sie die App auf die neuste Version.";
+
+  String get placePin => "Stecknadel";
+
+  String get degrees => "Grad";
+
+  String get minutes => "Minuten";
+
+  String get seconds => "Sekunden";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 	

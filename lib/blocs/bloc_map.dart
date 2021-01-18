@@ -204,8 +204,16 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
   }
 
   void onSearchFieldBtnClick() {
-    final newMode =
-        _mode.value == BtnsMode.search ? BtnsMode.none : BtnsMode.search;
+    // final newMode =
+    //     _mode.value != BtnsMode.searchFields ? BtnsMode.searchFields: BtnsMode.none;
+    
+    // final newMode =
+    // 		_mode.value == BtnsMode.search ? BtnsMode.none : BtnsMode.search;
+    
+    // final isMeasurementMode = true;
+    //
+    final newMode = _figureOutMode();
+    
     _mode.add(newMode);
     _searchedFieldSuggestions.add(null);
   }
@@ -558,5 +566,18 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
       _isLoading.add(false);
     }
     
+  }
+
+  BtnsMode _figureOutMode() {
+    final cm = _mode.value;
+    print("cm: $cm");
+    if (cm == BtnsMode.searchArea) return BtnsMode.measureArea;
+    if (cm == BtnsMode.searchDistance) return BtnsMode.measureDistance;
+    if (cm == BtnsMode.search) return BtnsMode.none;
+    
+    if (cm == BtnsMode.measureArea) return BtnsMode.searchArea;
+    if (cm == BtnsMode.measureDistance) return BtnsMode.searchDistance;
+    
+    return BtnsMode.search;
   }
 }
