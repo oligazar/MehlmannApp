@@ -1,3 +1,5 @@
+import 'package:mahlmann_app/common/extensions.dart';
+
 extension FieldValidator on String {
 	
 	String ifEmpty(String text) => text?.isNotEmpty == true ? null : this;
@@ -12,9 +14,9 @@ extension FieldValidator on String {
 	
 	String ifLessThan(String text, {int length = 5}) => (text?.length ?? 0) < length ? this : null;
 
-// String ifNotNumber(String text) {
-// 	if (text == null) return this;
-// 	final normalizedString = text.dotify();
-// 	return Decimal.tryParse(normalizedString) == null ? this : null;
-// }
+	String ifNotNumber(String text) {
+		if (text == null) return this;
+		final normalizedString = text.dotify();
+		return double.tryParse(normalizedString) == null ? this : null;
+	}
 }

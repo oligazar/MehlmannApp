@@ -358,11 +358,13 @@ class ViewMapState extends State<ViewMap> {
                                         MButton(
                                             onPressed:
                                                 _blocMap.onMeasurementClick,
-                                            icon:
-                                                mode == BtnsMode.measureDistance ||
-                                                mode == BtnsMode.searchDistance
-                                                    ? Icons.straighten
-                                                    : Icons.square_foot,
+                                            icon: mode ==
+                                                        BtnsMode
+                                                            .measureDistance ||
+                                                    mode ==
+                                                        BtnsMode.searchDistance
+                                                ? Icons.straighten
+                                                : Icons.square_foot,
                                             isActive: ![
                                               BtnsMode.measureArea,
                                               BtnsMode.measureDistance,
@@ -422,7 +424,25 @@ class ViewMapState extends State<ViewMap> {
                                                         BtnsMode
                                                             .searchDistance ||
                                                     mode == BtnsMode.searchArea)
-                                                ? SearchBoxLatLngs()
+                                                ? SearchBoxLatLngs(
+                                                    onSubmitted: (result) {
+                                                      final latLng = LatLng(
+                                                          result.lat,
+                                                          result.lng);
+                                                      if (result
+                                                          .shouldAddMarker) {
+                                                        _blocMap
+                                                            .onMapTap(latLng);
+                                                        _zoomFitLocation(
+                                                            latLng);
+                                                        _blocMap.onSearchFieldBtnClick();
+                                                      } else {
+                                                        // focus on the new point
+                                                        _zoomFitLocation(
+                                                            latLng);
+                                                      }
+                                                    },
+                                                  )
                                                 : Container(),
                                       ),
                                     ),
@@ -463,7 +483,9 @@ class ViewMapState extends State<ViewMap> {
                           builder: (context, snapshot) {
                             final mode = snapshot.data;
                             return mode == BtnsMode.measureArea ||
-                                    mode == BtnsMode.measureDistance
+                                    mode == BtnsMode.measureDistance ||
+                                    mode == BtnsMode.searchArea ||
+                                    mode == BtnsMode.searchDistance
                                 ? SafeArea(
                                     child: Center(
                                       child: _buildCrossHair(
@@ -568,11 +590,16 @@ class ViewMapState extends State<ViewMap> {
   Future<void> _goToCurrentPosition() async {
     final location = await currentLocation;
     if (location != null) {
-      final GoogleMapController controller = await _controller.future;
-      controller.animateCamera(CameraUpdate.newLatLngZoom(location, 12.8));
-      // controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
+      await _zoomFitLocation(location);
       _blocMap.markCurrentPosition(location);
     }
+  }
+
+  Future _zoomFitLocation(LatLng location) async {
+    await _controller.future.then((controller) {
+      controller.animateCamera(CameraUpdate.newLatLngZoom(location, 12.8));
+      controller.getVisibleRegion();
+    });
   }
 
   Future _zoomFitBounds(LatLngBounds bounds) async {

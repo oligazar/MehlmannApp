@@ -134,7 +134,10 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
 
   void onMapTap(LatLng latLng) {
     if (_mode.value == BtnsMode.measureArea ||
-        _mode.value == BtnsMode.measureDistance) {
+        _mode.value == BtnsMode.measureDistance ||
+        _mode.value == BtnsMode.searchDistance ||
+        _mode.value == BtnsMode.searchArea
+    ) {
       _pins.add(latLng);
 
       _measurement.add(_calculateMeasurement());
@@ -172,8 +175,15 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
       case BtnsMode.measureArea:
         newMode = BtnsMode.measureDistance;
         break;
+      case BtnsMode.searchArea:
+        newMode = BtnsMode.searchDistance;
+        break;
       case BtnsMode.measureDistance:
         newMode = BtnsMode.none;
+        _pins.clear();
+        break;
+      case BtnsMode.searchDistance:
+        newMode = BtnsMode.search;
         _pins.clear();
         break;
     }
@@ -204,14 +214,6 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
   }
 
   void onSearchFieldBtnClick() {
-    // final newMode =
-    //     _mode.value != BtnsMode.searchFields ? BtnsMode.searchFields: BtnsMode.none;
-    
-    // final newMode =
-    // 		_mode.value == BtnsMode.search ? BtnsMode.none : BtnsMode.search;
-    
-    // final isMeasurementMode = true;
-    //
     final newMode = _figureOutMode();
     
     _mode.add(newMode);

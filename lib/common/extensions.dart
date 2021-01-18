@@ -45,6 +45,15 @@ extension StringExt on String {
 		if (this?.toLowerCase() == "false") return false;
 		return null;
 	}
+	
+	String dotify() => this.replaceAll(',', '.');
+
+	String commify() => this.replaceAll('.', ',');
+
+	String dotifyIfNumber() {
+		final dotified = this.dotify();
+		return double.tryParse(dotified) != null ? dotified : this;
+	}
 }
 
 extension SetExt<E> on Set<E> {
