@@ -17,7 +17,7 @@ import 'package:mahlmann_app/common/extensions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mt;
 import 'package:rxdart/rxdart.dart' as rx;
 
-class BlocMap extends ExceptionHandleable implements Disposable  {
+class BlocMap extends ExceptionHandleable implements Disposable {
   // Try GetIt sometimes for this things!
   final _db = DbClient();
   final _api = ApiClient();
@@ -38,6 +38,7 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
   final _inboxFields = Set<Field>(); // red
 
   final _exception = rx.BehaviorSubject<Exception>();
+
   @override
   Stream<Exception> get exception => _exception.stream;
 
@@ -132,12 +133,11 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
 
   // Click handlers
 
-  void onMapTap(LatLng latLng) {
+  void onAddPin(LatLng latLng) {
     if (_mode.value == BtnsMode.measureArea ||
         _mode.value == BtnsMode.measureDistance ||
         _mode.value == BtnsMode.searchDistance ||
-        _mode.value == BtnsMode.searchArea
-    ) {
+        _mode.value == BtnsMode.searchArea) {
       _pins.add(latLng);
 
       _measurement.add(_calculateMeasurement());
@@ -215,7 +215,7 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
 
   void onSearchFieldBtnClick() {
     final newMode = _figureOutMode();
-    
+
     _mode.add(newMode);
     _searchedFieldSuggestions.add(null);
   }
@@ -239,7 +239,8 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
   }
 
   void onSubmitComment(int fieldId, String text) async {
-    final comment = await _api.createComment(fieldId, text).catchError(_exception.add);
+    final comment =
+        await _api.createComment(fieldId, text).catchError(_exception.add);
     if (comment != null) {
       final comments = _fieldComments.value ?? [];
       _fieldComments.value = comments..add(comment);
@@ -312,7 +313,14 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
   }
 
   Set<Polyline> _createPolylines() {
-    if (currentMode == BtnsMode.measureDistance && _pins.length > 1) {
+    final optionA = (currentMode == BtnsMode.measureDistance ||
+            currentMode == BtnsMode.searchDistance) &&
+        _pins.length > 1;
+    final optionB = (currentMode == BtnsMode.measureArea ||
+            currentMode == BtnsMode.searchArea) &&
+        _pins.length > 1 &&
+        _pins.length <= 2;
+    if (optionA || optionB) {
       final polyline = Polyline(
         polylineId: PolylineId("measurement"),
         width: 2,
@@ -495,7 +503,8 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
         _fieldInfo.add(field);
         _updateFields();
 
-        final comments = await _api.fetchComments(field.id).catchError(_exception.add);
+        final comments =
+            await _api.fetchComments(field.id).catchError(_exception.add);
         _fieldComments.value = comments;
       } else {
         _fieldInfo.add(null);
@@ -554,7 +563,7 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
     try {
       final response = await _api.fetchObjects(from: await Prefs.lastUpdate);
       await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
-  
+
       await _db.insertFountains(response.fountains.toList(),
           shouldClearTable: false);
       await _db.insertFields(response.fields.toList(), shouldClearTable: false);
@@ -567,7 +576,6 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
     } finally {
       _isLoading.add(false);
     }
-    
   }
 
   BtnsMode _figureOutMode() {
@@ -576,10 +584,10 @@ class BlocMap extends ExceptionHandleable implements Disposable  {
     if (cm == BtnsMode.searchArea) return BtnsMode.measureArea;
     if (cm == BtnsMode.searchDistance) return BtnsMode.measureDistance;
     if (cm == BtnsMode.search) return BtnsMode.none;
-    
+
     if (cm == BtnsMode.measureArea) return BtnsMode.searchArea;
     if (cm == BtnsMode.measureDistance) return BtnsMode.searchDistance;
-    
+
     return BtnsMode.search;
   }
 }

@@ -432,7 +432,7 @@ class ViewMapState extends State<ViewMap> {
                                                       if (result
                                                           .shouldAddMarker) {
                                                         _blocMap
-                                                            .onMapTap(latLng);
+                                                            .onAddPin(latLng);
                                                         _zoomFitLocation(
                                                             latLng);
                                                         _blocMap.onSearchFieldBtnClick();
@@ -491,7 +491,7 @@ class ViewMapState extends State<ViewMap> {
                                       child: _buildCrossHair(
                                           25.4,
                                           () => _blocMap
-                                              .onMapTap(_currentPosition)),
+                                              .onAddPin(_currentPosition)),
                                     ),
                                   )
                                 : Container();
