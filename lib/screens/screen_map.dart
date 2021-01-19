@@ -20,6 +20,7 @@ import 'package:mahlmann_app/models/built_value/btns_mode.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
+import 'package:mahlmann_app/models/built_value/measurements.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
 import 'package:mahlmann_app/widgets/cross_hair.dart';
@@ -268,19 +269,25 @@ class ViewMapState extends State<ViewMap> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              StreamBuilder<double>(
-                                  stream: _blocMap.measurement,
+                              StreamBuilder<Measurements>(
+                                  stream: _blocMap.measurements,
                                   builder: (context, snapshot) {
-                                    final measurement = snapshot.data;
-                                    if (measurement != null) {
-                                      final mString = _blocMap.currentMode ==
-                                              BtnsMode.measureArea
-                                          ? "${measurement.toStringAsFixed(2)} ha"
-                                          : "${measurement.toStringAsFixed(2)} m";
-                                      return Text(mString);
-                                    } else {
-                                      return Container(height: 0);
-                                    }
+                                    final distance = snapshot.data?.distance;
+                                    final area = snapshot.data?.area;
+                                    return snapshot.data != null ? Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white54,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (distance != null) Text("${distance.toStringAsFixed(2)} m"),
+                                          if (area != null) Text("${area.toStringAsFixed(2)} ha"),
+                                        ],
+                                      ),
+                                    ) : Column();
                                   }),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -515,10 +522,10 @@ class ViewMapState extends State<ViewMap> {
           Positioned(
             left: width / 2,
             top: (height / 3.5) - textShift,
-            child: StreamBuilder<double>(
-              stream: _blocMap.lastSegmentMeasurement,
+            child: StreamBuilder<Measurements>(
+              stream: _blocMap.measurements,
               builder: (context, snapshot) {
-                final lastSegmentDistance = snapshot.data;
+                final lastSegmentDistance = snapshot.data?.lastSegment;
                 return lastSegmentDistance != null ? Container(
                   height: textShift,
                   decoration: BoxDecoration(

@@ -11,6 +11,7 @@ import 'package:mahlmann_app/models/built_value/comment.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
 import 'package:mahlmann_app/models/built_value/group.dart';
+import 'package:mahlmann_app/models/built_value/measurements.dart';
 import 'package:mahlmann_app/models/map/map_data.dart';
 import 'package:mahlmann_app/models/map/model_marker.dart';
 import 'package:mahlmann_app/common/extensions.dart';
@@ -24,8 +25,9 @@ class BlocMap extends ExceptionHandleable implements Disposable {
   final _mapData = rx.BehaviorSubject<MapData>.seeded(MapData());
   final _isLoading = rx.BehaviorSubject<bool>.seeded(false);
   final _bounds = rx.BehaviorSubject<LatLngBounds>();
-  final _measurement = rx.BehaviorSubject<double>();
-  final _lastSegmentMeasurement = rx.BehaviorSubject<double>();
+
+  final _measurement = rx.BehaviorSubject<Measurements>.seeded(Measurements());
+
   final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
   final _fieldInfo = rx.BehaviorSubject<Field>();
   final _searchedFieldSuggestions =
@@ -50,9 +52,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 
   Stream<LatLngBounds> get bounds => _bounds.stream;
 
-  Stream<double> get measurement => _measurement.stream;
-
-  Stream<double> get lastSegmentMeasurement => _lastSegmentMeasurement.stream;
+  Stream<Measurements> get measurements => _measurement.stream;
 
   Stream<BtnsMode> get mode => _mode.stream;
 
@@ -80,7 +80,6 @@ class BlocMap extends ExceptionHandleable implements Disposable {
     _mapData.close();
     _bounds.close();
     _measurement.close();
-    _lastSegmentMeasurement.close();
     _mode.close();
     _fieldInfo.close();
     _fieldComments.close();
@@ -145,7 +144,6 @@ class BlocMap extends ExceptionHandleable implements Disposable {
       _pins.add(latLng);
 
       _measurement.add(_calculateMeasurement());
-      _lastSegmentMeasurement.add(_calculateLastSegmentMeasurement());
 
       _updateMapData(
         pins: _createPins(),
@@ -196,7 +194,6 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 
     if (newMode == BtnsMode.none) {
       _measurement.add(null);
-      _lastSegmentMeasurement.add(null);
       _updateMapData(
         pins: Set<ModelMarker>(),
         polygons: _createPolygons(),
@@ -204,7 +201,6 @@ class BlocMap extends ExceptionHandleable implements Disposable {
       );
     } else {
       _measurement.add(_calculateMeasurement());
-      _lastSegmentMeasurement.add(_calculateLastSegmentMeasurement());
       _updateMapData(
         pins: _createPins(),
         polygons: _createPolygons(),
@@ -238,7 +234,6 @@ class BlocMap extends ExceptionHandleable implements Disposable {
   void onBackBtnClick() {
     _pins.removeLast();
     _measurement.add(_calculateMeasurement());
-    _lastSegmentMeasurement.add(_calculateLastSegmentMeasurement());
     _updateMapData(
       pins: _createPins(),
       polygons: _createPolygons(),
@@ -301,21 +296,28 @@ class BlocMap extends ExceptionHandleable implements Disposable {
   // private functions
 
   // calculates area in ha or distance in meters depending on the mode
-  double _calculateMeasurement() {
-    // TODO: optimization - pull the code from the library
-    if (currentMode == BtnsMode.measureArea) {
-      if (_pins.length > 2) {
-        final areaSquareMeters = mt.SphericalUtil.computeArea(
-            _pins.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
-        final areaHa = areaSquareMeters / 10000;
-        return areaHa;
-      }
-    } else {
-      if (_pins.length > 1) {
-        final distanceMeters = mt.SphericalUtil.computeLength(
-            _pins.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
-        return distanceMeters;
-      }
+  Measurements _calculateMeasurement() {
+    return _measurement.value.rebuild((b) => b
+      ..area = _calculateArea()
+      ..distance = _calculateDistance()
+      ..lastSegment = _calculateLastSegmentMeasurement());
+  }
+  
+  double _calculateDistance() {
+    if (_pins.length > 1) {
+      final distanceMeters = mt.SphericalUtil.computeLength(
+          _pins.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
+      return distanceMeters;
+    }
+    return null;
+  }
+  
+  double _calculateArea() {
+    if (currentMode == BtnsMode.measureArea && _pins.length > 2) {
+      final areaSquareMeters = mt.SphericalUtil.computeArea(
+          _pins.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
+      final areaHa = areaSquareMeters / 10000;
+      return areaHa;
     }
     return null;
   }
