@@ -297,7 +297,8 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 
   // calculates area in ha or distance in meters depending on the mode
   Measurements _calculateMeasurement() {
-    return _measurement.value.rebuild((b) => b
+    final m = _measurement.value ?? Measurements();
+    return m.rebuild((b) => b
       ..area = _calculateArea()
       ..distance = _calculateDistance()
       ..lastSegment = _calculateLastSegmentMeasurement());
