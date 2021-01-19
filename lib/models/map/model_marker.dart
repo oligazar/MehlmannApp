@@ -93,9 +93,9 @@ class LabelMarker extends StatelessWidget {
 					),
 					Flexible(
 						child: NotNullBuilder(
-							value: name,
+							value: area,
 							builder: (context, title) => Text(
-								"($area h)",
+								"($title h)",
 								style: TextStyle(fontSize: 14, color: Colors.black),
 							),
 						),
@@ -116,7 +116,7 @@ class NotNullBuilder<T> extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return value != null && builder != null
 				? builder(context, value)
-				: Container(width: 0,);
+				: Container(width: 0, height: 20,);
 	}
 }
 
