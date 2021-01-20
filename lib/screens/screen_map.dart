@@ -274,7 +274,7 @@ class ViewMapState extends State<ViewMap> {
                                   builder: (context, snapshot) {
                                     final distance = snapshot.data?.distance;
                                     final area = snapshot.data?.area;
-                                    return snapshot.data != null ? Container(
+                                    return snapshot.data != null || (area != null && distance != null) ? Container(
                                       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                                       decoration: BoxDecoration(
                                         color: Colors.white54,

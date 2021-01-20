@@ -26,7 +26,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
   final _isLoading = rx.BehaviorSubject<bool>.seeded(false);
   final _bounds = rx.BehaviorSubject<LatLngBounds>();
 
-  final _measurement = rx.BehaviorSubject<Measurements>.seeded(Measurements());
+  final _measurement = rx.BehaviorSubject<Measurements>();
 
   final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
   final _fieldInfo = rx.BehaviorSubject<Field>();
@@ -35,7 +35,8 @@ class BlocMap extends ExceptionHandleable implements Disposable {
   final _fieldComments = rx.BehaviorSubject<List<Comment>>();
   final _inboxGroups = rx.BehaviorSubject<List<Group>>(); // purple
 
-  final _fields = Set<Field>(); // orange
+  final _fountains = Set<Fountain>(); // green
+  final _fields = Set<Field>(); // green
   final _searchedFields = Set<Field>(); // orange
   final _fieldsGroup = Set<Field>(); // red
   final _inboxFields = Set<Field>(); // red
@@ -224,7 +225,11 @@ class BlocMap extends ExceptionHandleable implements Disposable {
   }
 
   void onFountainsBtnClicked() {
-    _updateMapData(showFountains: !_mapData.value.showFountains);
+    final shouldShowFountains = !_mapData.value.showFountains;
+    _updateMapData(
+      labels: _createLabelsMarkers(_fields.toList(), shouldShowFountains ? _fountains.toList() : []),
+      showFountains: shouldShowFountains,
+    );
   }
 
   void onLabelsBtnClicked() {
@@ -303,7 +308,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
       ..distance = _calculateDistance()
       ..lastSegment = _calculateLastSegmentMeasurement());
   }
-  
+
   double _calculateDistance() {
     if (_pins.length > 1) {
       final pins = List.of(_pins);
@@ -316,7 +321,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
     }
     return null;
   }
-  
+
   double _calculateArea() {
     if (currentMode == BtnsMode.measureArea && _pins.length > 2) {
       final areaSquareMeters = mt.SphericalUtil.computeArea(
@@ -430,16 +435,16 @@ class BlocMap extends ExceptionHandleable implements Disposable {
             hue: BitmapDescriptor.hueBlue,
             // color: f.name,
           ),
-      for (Fountain fountain in fountains)
-        if (fountain.lat != null && fountain.lng != null)
-          ModelMarker(
-            id: id ?? "labelId-${fountain.lat}-${fountain.lng}",
-            title: fountain.name,
-            // subTitle: "${fountain.color}",
-            latLng: LatLng(fountain.lat, fountain.lng),
-            hue: BitmapDescriptor.hueBlue,
-            // color: f.name,
-          ),
+        for (Fountain fountain in fountains)
+          if (fountain.lat != null && fountain.lng != null)
+            ModelMarker(
+              id: id ?? "labelId-${fountain.lat}-${fountain.lng}",
+              title: fountain.name,
+              // subTitle: "${fountain.color}",
+              latLng: LatLng(fountain.lat, fountain.lng),
+              hue: BitmapDescriptor.hueBlue,
+              // color: f.name,
+            ),
     ].toSet();
   }
 
@@ -463,6 +468,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
     _fields.addAll(fields ?? []);
     final polygons = _createPolygons();
     final fountains = await _db.queryFountains();
+    _fountains.addAll(fountains ?? []);
     final labels = _createLabelsMarkers(fields, fountains);
 
     final markers = _mapData.value.fountains ?? Set<ModelMarker>();
