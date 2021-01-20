@@ -306,8 +306,12 @@ class BlocMap extends ExceptionHandleable implements Disposable {
   
   double _calculateDistance() {
     if (_pins.length > 1) {
+      final pins = List.of(_pins);
+      if (currentMode == BtnsMode.measureArea && pins.length > 2) {
+        pins.add(pins[0]);
+      }
       final distanceMeters = mt.SphericalUtil.computeLength(
-          _pins.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
+          pins.map((c) => mt.LatLng(c.latitude, c.longitude)).toList());
       return distanceMeters;
     }
     return null;
