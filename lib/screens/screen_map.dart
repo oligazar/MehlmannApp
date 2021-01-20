@@ -33,7 +33,6 @@ import 'package:mahlmann_app/widgets/exception_handler.dart';
 import 'package:mahlmann_app/widgets/m_button.dart';
 import 'package:mahlmann_app/widgets/m_progress_indicator.dart';
 import 'package:mahlmann_app/widgets/m_text_field.dart';
-import 'package:mahlmann_app/widgets/marker_generator.dart';
 import 'package:mahlmann_app/widgets/search_box_fields.dart';
 import 'package:mahlmann_app/widgets/dialogs/select_sentence_dialog.dart';
 import 'package:mahlmann_app/widgets/search_box_lat_lngs.dart';
@@ -162,6 +161,41 @@ class ViewMapState extends State<ViewMap> {
                     ],
                   );
                 }),
+            btnTitle: _loc.close,
+          ),
+        );
+      }
+    });
+    _fountainInfoSubscription = _blocMap.fountainInfo.listen((fountain) async {
+      if (fountain != null) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) => MDialog(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: DialogButton(
+                    title: _loc.route,
+                    action: () {
+                      final lat = fountain.lat;
+                      final lng = fountain.lng;
+                      if (lat != null && lng != null) {
+                        _openMap(
+                          lat,
+                          lng,
+                          title: fountain.name,
+                        );
+                      }
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ),
+                InfoRow(_loc.name, fountain.name),
+              ],
+            ),
             btnTitle: _loc.close,
           ),
         );
@@ -377,8 +411,7 @@ class ViewMapState extends State<ViewMap> {
                                               final isAdmin =
                                                   snapshot.data == /*true*/
                                                       false;
-                                              return isAdmin &&
-                                                      _blocMap.hasFieldInfo
+                                              return isAdmin
                                                   ? MButton(
                                                       onPressed:
                                                           _onSentenceBtnClick,
@@ -617,39 +650,8 @@ class ViewMapState extends State<ViewMap> {
             markerId: MarkerId(model.id),
             position: model.latLng,
             onTap: () async {
-              if (isFountain && model != null) {
-                await showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (BuildContext context) => MDialog(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Align(
-                          alignment: Alignment.center,
-                          child: DialogButton(
-                            title: _loc.route,
-                            action: () {
-                              final c = model.latLng;
-                              if (c.latitude != null && c.longitude != null) {
-                                _openMap(
-                                  model.latLng.latitude,
-                                  model.latLng.longitude,
-                                  title: model.title,
-                                );
-                              }
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ),
-                        InfoRow(_loc.name, model.title),
-                      ],
-                    ),
-                    btnTitle: _loc.close,
-                  ),
-                );
-                // show dialog first
-                // and then open map
+              if (model.onTap != null) {
+                model.onTap();
               } else {
                 _openMap(model.latLng.latitude, model.latLng.longitude,
                     title: model.title);
@@ -713,6 +715,8 @@ class ViewMapState extends State<ViewMap> {
       if (sentenceName != null) {
         await _blocMap.onSendSentence(sentenceName);
         context.showSnackBar(Text(_loc.msgSuccess));
+      } else {
+        _blocMap.onDeselectSentence();
       }
     } else {
       _blocMap.onSelectSentenceClick();

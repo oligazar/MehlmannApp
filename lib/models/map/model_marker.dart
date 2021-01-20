@@ -12,6 +12,7 @@ class ModelMarker extends IconizedClusterable {
 	final double hue;
 	final MarkerColors color;
 	BitmapDescriptor icon;
+	Function onTap;
 
 	ModelMarker({
 		@required this.id,
@@ -22,6 +23,7 @@ class ModelMarker extends IconizedClusterable {
 		this.hue,
 		this.color = MarkerColors.green,
 		this.icon,
+		this.onTap,
 		isCluster = false,
 		clusterId,
 		pointsSize,
