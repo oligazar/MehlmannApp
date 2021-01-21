@@ -44,6 +44,8 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	
 	final _exception = rx.BehaviorSubject<Exception>();
 	
+	bool get hasSearchedFields => _searchedFields.isNotEmpty;
+	
 	@override
 	Stream<Exception> get exception => _exception.stream;
 	
@@ -128,6 +130,16 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		_updateMapData(polygons: polygons);
 		
 		_updateBounds([field]);
+	}
+	
+	void deselectSearchFields() {
+		_mode.add(BtnsMode.none);
+		_searchedFields.clear();
+		
+		final polygons = _createPolygons();
+		_updateMapData(polygons: polygons);
+		
+		_updateBounds(_fields);
 	}
 	
 	void onFieldsQueryChanged(String query) async {
@@ -668,4 +680,5 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		
 		return BtnsMode.search;
 	}
+
 }

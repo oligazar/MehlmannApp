@@ -38,7 +38,7 @@ class _SearchBoxFieldsState extends State<SearchBoxFields> {
       padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
           color: Colors.white.withAlpha(220),
-          borderRadius: BorderRadius.all(Radius.circular(16))),
+          borderRadius: BorderRadius.all(Radius.circular(12))),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -308,20 +308,29 @@ class ViewMapState extends State<ViewMap> {
                                   builder: (context, snapshot) {
                                     final distance = snapshot.data?.distance;
                                     final area = snapshot.data?.area;
-                                    return snapshot.data != null || (area != null && distance != null) ? Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white54,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (distance != null) Text("${distance.toStringAsFixed(2)} m"),
-                                          if (area != null) Text("${area.toStringAsFixed(2)} ha"),
-                                        ],
-                                      ),
-                                    ) : Column();
+                                    return snapshot.data != null ||
+                                            (area != null && distance != null)
+                                        ? Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 6, horizontal: 12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white54,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (distance != null)
+                                                  Text(
+                                                      "${distance.toStringAsFixed(2)} m"),
+                                                if (area != null)
+                                                  Text(
+                                                      "${area.toStringAsFixed(2)} ha"),
+                                              ],
+                                            ),
+                                          )
+                                        : Column();
                                   }),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -464,7 +473,8 @@ class ViewMapState extends State<ViewMap> {
                                                             .onAddPin(latLng);
                                                         _zoomFitLocation(
                                                             latLng);
-                                                        _blocMap.onSearchFieldBtnClick();
+                                                        _blocMap
+                                                            .onSearchFieldBtnClick();
                                                       } else {
                                                         // focus on the new point
                                                         _zoomFitLocation(
@@ -515,9 +525,8 @@ class ViewMapState extends State<ViewMap> {
                                     mode == BtnsMode.measureDistance
                                 ? SafeArea(
                                     child: Center(
-                                      child: _buildCrossHair(
-                                          () => _blocMap
-                                              .onAddPin(_currentPosition)),
+                                      child: _buildCrossHair(() =>
+                                          _blocMap.onAddPin(_currentPosition)),
                                     ),
                                   )
                                 : Container();
@@ -556,25 +565,27 @@ class ViewMapState extends State<ViewMap> {
             left: width / 2,
             top: (height / 3.5) - textShift,
             child: StreamBuilder<Measurements>(
-              stream: _blocMap.measurements,
-              builder: (context, snapshot) {
-                final lastSegmentDistance = snapshot.data?.lastSegment;
-                return lastSegmentDistance != null ? Container(
-                  height: textShift,
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    border: Border.all(
-                      color: color1,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Text("${lastSegmentDistance?.toStringAsFixed(1)} m",
-                      style: TextStyle(
-                        color: Colors.white,
-                      )),
-                ) : Container();
-              }
-            ),
+                stream: _blocMap.measurements,
+                builder: (context, snapshot) {
+                  final lastSegmentDistance = snapshot.data?.lastSegment;
+                  return lastSegmentDistance != null
+                      ? Container(
+                          height: textShift,
+                          decoration: BoxDecoration(
+                            color: Colors.black45,
+                            border: Border.all(
+                              color: color1,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                              "${lastSegmentDistance?.toStringAsFixed(1)} m",
+                              style: TextStyle(
+                                color: Colors.white,
+                              )),
+                        )
+                      : Container();
+                }),
           ),
           Center(
               child: Container(
@@ -791,31 +802,46 @@ class ViewMapState extends State<ViewMap> {
   }
 
   _buildSearchBoxFields() {
-    return SearchBoxFields(
-      onSubmitted: _blocMap.onFieldsQuerySubmitted,
-      onChanged: _blocMap.onFieldsQueryChanged,
-      child: Flexible(
-        child: StreamBuilder<List<Field>>(
-          stream: _blocMap.searchedFieldSuggestions,
-          builder: (context, snapshot) {
-            final fields = snapshot.data ?? [];
-            return SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (Field field in fields)
-                    SearchSuggestionItem(
-                      field: field,
-                      onSelected: _blocMap.onSuggestionFieldClick,
-                    )
-                ],
+    return StreamBuilder<List<Field>>(
+        stream: _blocMap.searchedFieldSuggestions,
+        builder: (context, snapshot) {
+          final fields = snapshot.data ?? [];
+          return Row(
+            // crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(
+                child: SearchBoxFields(
+                  onSubmitted: _blocMap.onFieldsQuerySubmitted,
+                  onChanged: _blocMap.onFieldsQueryChanged,
+                  child: Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (Field field in fields)
+                            SearchSuggestionItem(
+                              field: field,
+                              onSelected: _blocMap.onSuggestionFieldClick,
+                            )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            );
-          },
-        ),
-      ),
-    );
+              if (_blocMap.hasSearchedFields && fields.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0),
+                  child: MButton(
+                      onPressed: () {
+                        _blocMap.deselectSearchFields();
+                      },
+                      icon: Icons.close),
+                ),
+            ],
+          );
+        });
   }
 }
 
