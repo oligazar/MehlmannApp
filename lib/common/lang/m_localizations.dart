@@ -97,5 +97,11 @@ class MLocalizations {
   String get seconds => "Sekunden";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
+
+  String scope(String scope) => "$scope m Umfang";
+
+  String distance(String distance) => "$distance m Distanz";
+
+  String area(String area) => "$area ha Fläche";
 	
 }

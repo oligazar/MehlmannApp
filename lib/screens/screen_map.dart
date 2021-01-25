@@ -322,11 +322,22 @@ class ViewMapState extends State<ViewMap> {
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 if (distance != null)
-                                                  Text(
-                                                      "${distance.toStringAsFixed(2)} m"),
+                                                  if (_blocMap.currentMode ==
+                                                      BtnsMode.measureArea)
+                                                    Text(_loc
+                                                        .scope(distance
+                                                            .toStringAsFixed(2))
+                                                        .replaceAll(".", ","))
+                                                  else
+                                                    Text(_loc
+                                                        .distance(distance
+                                                            .toStringAsFixed(2))
+                                                        .replaceAll(".", ",")),
                                                 if (area != null)
-                                                  Text(
-                                                      "${area.toStringAsFixed(2)} ha"),
+                                                  Text(_loc
+                                                      .area(area
+                                                          .toStringAsFixed(2))
+                                                      .replaceAll(".", ",")),
                                               ],
                                             ),
                                           )
@@ -571,6 +582,7 @@ class ViewMapState extends State<ViewMap> {
                   return lastSegmentDistance != null
                       ? Container(
                           height: textShift,
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
                           decoration: BoxDecoration(
                             color: Colors.black45,
                             border: Border.all(
