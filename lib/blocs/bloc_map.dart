@@ -491,7 +491,11 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 				northeast: LatLng(northeastLat, northeastLon));
 	}
 	
-	Future _prepareData() async {
+	Future _prepareData({bool forceRefresh = false}) async {
+		if (forceRefresh) { 
+			_fields.clear(); 
+		  _fountains.clear();
+		}
 		final fields = await _db.queryFields();
 		_fields.addAll(fields ?? []);
 		final polygons = _createPolygons();
@@ -639,7 +643,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 			await _db.insertFields(response.fields.toList());
 			await _db.insertGroups(response.groups.toList());
 			
-			await _prepareData();
+			await _prepareData(forceRefresh: true);
 		} catch (e) {
 			print("onRefreshBtnClicked: $e");
 			_exception.add(e);

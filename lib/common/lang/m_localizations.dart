@@ -82,7 +82,7 @@ class MLocalizations {
 
   String get staging => "Staging";
 
-  String get production => "Herstellung";
+  String get production => "Produktion";
 
   String get errorTitle => "Fehler";
 

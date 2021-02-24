@@ -10,8 +10,8 @@ Future<LatLng> get currentLocation async {
 		LatLng latLng;
 		try {
 			print("currentLocation, beforeTime: $millis");
-			final position = await Geolocator().getLastKnownPosition() ??
-					await Geolocator().getCurrentPosition();
+			final position = await Geolocator().getCurrentPosition() ??
+					await Geolocator().getLastKnownPosition();
 			
 			latLng = LatLng(position.latitude, position.longitude);
 			
