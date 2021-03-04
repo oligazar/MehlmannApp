@@ -20,13 +20,14 @@ class MapOpener {
 	static List<String> buildMapUrls({String address, LatLng location}) {
 		// https://developers.google.com/maps/documentation/urls/ios-urlscheme
 		final googleMapsQuery = _makeCombinedQuery(address, location, aPrefix: 'q', lPrefix: 'center');
-		// https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/MapLinks/MapLinks.html#//apple_ref/doc/uid/TP40007899-CH5-SW1
+		// https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/´´MapLinks/MapLinks.html#//apple_ref/doc/uid/TP40007899-CH5-SW1
 		final appleQuery = _makeCombinedQuery(address, location, aPrefix: 'q', lPrefix: 'll');
 		// https://stackoverflow.com/a/24778057/4656400
 		final googleQuery = _makeCombinedQuery(address, location, aPrefix: 'q', lPrefix: 'near'); /*_makeLocationQuery(location, prefix: 'q') ?? *//*_makeAddressQuery(address) ??*/ /*"";*/
 		return [
 			'comgooglemaps://?$googleMapsQuery&dirflg=w,',
 			'https://maps.apple.com/?$appleQuery&dirflg=w',
+			'maps://?$appleQuery&dirflg=w',
 			'http://maps.google.com/maps?$googleQuery&dirflg=w,',
 		];
 	}
