@@ -685,4 +685,8 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		return BtnsMode.search;
 	}
 
+
+  Future onTrackingPressed(bool isTracking) async {
+		print("isTracking: $isTracking");
+  }
 }

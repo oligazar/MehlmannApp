@@ -83,6 +83,8 @@ class ViewMapState extends State<ViewMap> {
   BitmapDescriptor _iconDrop;
   StreamSubscription<Field> _fieldInfoSubscription;
   StreamSubscription<Fountain> _fountainInfoSubscription;
+  ValueNotifier<bool> _isMenuOpen = ValueNotifier(false);
+  ValueNotifier<bool> _isTracking = ValueNotifier(false);
 
   final String _channelName = 'UpdatesChannel';
 
@@ -346,14 +348,18 @@ class ViewMapState extends State<ViewMap> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  MButton(
-                                    onPressed: _blocMap.switchMapType,
-                                    icon: Icons.map,
-                                    isActive: mapData?.isSatelliteView != true,
-                                  ),
-                                  MButton(
-                                    onPressed: _goToCurrentPosition,
-                                    icon: Icons.location_on,
+                                  ValueListenableBuilder<bool>(
+                                    valueListenable: _isTracking,
+                                    builder: (context, isTracking, child) {
+                                      return MButton(
+                                        onPressed: () {
+                                          _isTracking.value = !_isTracking.value;
+                                          _blocMap.onTrackingPressed(_isTracking.value);
+                                          },
+                                        icon: Icons.gps_fixed,
+                                        isActive: isTracking,
+                                      );
+                                    }
                                   ),
                                   MButton(
                                     onPressed: _blocMap.onFountainsBtnClicked,
@@ -403,6 +409,8 @@ class ViewMapState extends State<ViewMap> {
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         MButton(
@@ -456,9 +464,42 @@ class ViewMapState extends State<ViewMap> {
                                         MButton(
                                             onPressed: _onSentenceInboxClick,
                                             icon: Icons.move_to_inbox),
-                                        MButton(
-                                            onPressed: _logOut,
-                                            icon: Icons.power_settings_new),
+                                        ValueListenableBuilder<bool>(
+                                            valueListenable: _isMenuOpen,
+                                            builder:
+                                                (context, isMenuOpen, child) {
+                                              return Column(
+                                                children: [
+                                                  MButton(
+                                                    onPressed: (){
+                                                      _isMenuOpen.value = !_isMenuOpen.value;
+                                                    },
+                                                    icon: Icons.menu,
+                                                    isActive: isMenuOpen,
+                                                  ),
+                                                  if (isMenuOpen)
+                                                    MButton(
+                                                      onPressed:
+                                                          _goToCurrentPosition,
+                                                      icon: Icons.location_on,
+                                                    ),
+                                                  if (isMenuOpen)
+                                                    MButton(
+                                                      onPressed: _blocMap
+                                                          .switchMapType,
+                                                      icon: Icons.map,
+                                                      isActive: mapData
+                                                              ?.isSatelliteView !=
+                                                          true,
+                                                    ),
+                                                  if (isMenuOpen)
+                                                    MButton(
+                                                        onPressed: _logOut,
+                                                        icon: Icons
+                                                            .power_settings_new),
+                                                ],
+                                              );
+                                            }),
                                       ],
                                     ),
                                     Flexible(
