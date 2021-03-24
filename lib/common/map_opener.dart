@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -25,9 +27,9 @@ class MapOpener {
 		// https://stackoverflow.com/a/24778057/4656400
 		final googleQuery = _makeCombinedQuery(address, location, aPrefix: 'q', lPrefix: 'near'); /*_makeLocationQuery(location, prefix: 'q') ?? *//*_makeAddressQuery(address) ??*/ /*"";*/
 		return [
-			'comgooglemaps://?$googleMapsQuery&dirflg=w,',
-			'https://maps.apple.com/?$appleQuery&dirflg=w',
-			'maps://?$appleQuery&dirflg=w',
+			if (Platform.isAndroid) 'comgooglemaps://?$googleMapsQuery&dirflg=w,',
+			if (Platform.isIOS) 'https://maps.apple.com/?$appleQuery&dirflg=w',
+			if (Platform.isIOS) 'maps://?$appleQuery&dirflg=w',
 			'http://maps.google.com/maps?$googleQuery&dirflg=w,',
 		];
 	}

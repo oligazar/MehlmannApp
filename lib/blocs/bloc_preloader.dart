@@ -22,7 +22,7 @@ class BlocPreloader extends ExceptionHandleable implements Disposable {
   }
 	
 	Future<void> _fetchAndSaveFields() async {
-		final response = await _api.fetchObjects(from: await Prefs.lastUpdate).catchError(_exception.add);
+		final response = await _api.fetchObjects(from: await Prefs.lastUpdate).catchError((e) { _exception.add(e); });
   	await Prefs.saveLastUpdate(await DateFormatter.getTimeStringAsync());
 		
 		await _db.insertFountains(response.fountains.toList(), shouldClearTable: false);

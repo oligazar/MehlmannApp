@@ -4,6 +4,7 @@ import 'package:mahlmann_app/common/api/api_client.dart';
 import 'package:mahlmann_app/common/date_formatter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/common/interfaces/exception_handleable.dart';
+import 'package:mahlmann_app/common/location/location_helper.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
@@ -266,10 +267,10 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	
 	void onSubmitComment(int fieldId, String text) async {
 		final comment =
-		await _api.createComment(fieldId, text).catchError(_exception.add);
+		await _api.createComment(fieldId, text).catchError((e) { _exception.add(e); });
 		if (comment != null) {
 			final comments = _fieldComments.value ?? [];
-			_fieldComments.value = comments..add(comment);
+			_fieldComments.add(comments..add(comment));
 		}
 	}
 	
@@ -277,7 +278,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		final groups = await _db.queryGroups();
 		final filtered =
 		groups.where((group) => group.name?.isNotEmpty == true).toList();
-		_inboxGroups.value = filtered;
+		_inboxGroups.add(filtered);
 	}
 	
 	void handleSentence(List<int> fieldIds) async {
@@ -294,7 +295,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	
 	Future onSendSentence(String sentenceName) async {
 		final fieldIds = _fieldsGroup.map((fg) => fg.id).toList();
-		await _api.createGroup(sentenceName, fieldIds).catchError(_exception.add);
+		await _api.createGroup(sentenceName, fieldIds).catchError((e) { _exception.add(e); });
 		_fieldsGroup.clear();
 		
 		_updateMapData(
@@ -403,7 +404,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		ModelMarker currentPosition,
 	}) {
 		final MapData mapData = _mapData.value;
-		_mapData.value = mapData != null
+		final newData = mapData != null
 				? mapData.copyWith(
 			fountains: fountains ?? mapData.fountains,
 			pins: pins ?? mapData.pins,
@@ -426,6 +427,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 			isSatelliteView: isSatelliteView,
 			currentPosition: currentPosition,
 		);
+		_mapData.add(newData);
 	}
 	
 	Iterable<ModelMarker> _createFountainsMarkers(List<Fountain> fountains, {
@@ -572,7 +574,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 				currentMode != BtnsMode.searchArea &&
 				currentMode != BtnsMode.searchDistance) {
 			
-			_fieldComments.value = [];
+			_fieldComments.add([]);
 			
 			void _updateFields() {
 				final polygons = _createPolygons();
@@ -584,8 +586,8 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 				// _updateFields();
 				
 				final comments =
-				await _api.fetchComments(field.id).catchError(_exception.add);
-				_fieldComments.value = comments;
+				await _api.fetchComments(field.id).catchError((e) { _exception.add(e); });
+				_fieldComments.add(comments);
 			} else {
 				_fieldInfo.add(null);
 				// grouping == true
@@ -688,5 +690,10 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 
   Future onTrackingPressed(bool isTracking) async {
 		print("isTracking: $isTracking");
+		if (isTracking) {
+			LocationHelper().startListeningLocation();
+		} else {
+			LocationHelper().stopListeningLocation();
+		}
   }
 }

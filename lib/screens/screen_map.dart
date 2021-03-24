@@ -13,6 +13,7 @@ import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
+import 'package:mahlmann_app/common/location/location_helper.dart';
 import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
@@ -40,6 +41,7 @@ import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:post_frame_image_builder/post_frame_image_builder.dart';
 import 'package:cluster_builder/cluster_builder.dart';
+import 'package:mahlmann_app/common/functions.dart';
 
 // drawing custom marker on the field: https://github.com/flutter/flutter/issues/26109
 class ScreenMap extends StatelessWidget {
@@ -204,6 +206,7 @@ class ViewMapState extends State<ViewMap> {
       }
     });
     _initActionCable();
+    _initState();
     super.initState();
   }
 
@@ -274,8 +277,8 @@ class ViewMapState extends State<ViewMap> {
                             return GoogleMap(
                               zoomControlsEnabled: false,
                               myLocationButtonEnabled: false,
-                              polygons: mapData?.polygons,
-                              polylines: mapData?.polylines,
+                              polygons: mapData?.polygons ?? {},
+                              polylines: mapData?.polylines ?? {},
                               markers:
                                   _buildAllMarkers(mapData, labels, fountains),
                               onCameraMove: (position) async {
@@ -349,18 +352,21 @@ class ViewMapState extends State<ViewMap> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   ValueListenableBuilder<bool>(
-                                    valueListenable: _isTracking,
-                                    builder: (context, isTracking, child) {
-                                      return MButton(
-                                        onPressed: () {
-                                          _isTracking.value = !_isTracking.value;
-                                          _blocMap.onTrackingPressed(_isTracking.value);
+                                      valueListenable: _isTracking,
+                                      builder: (context, isTracking, child) {
+                                        return MButton(
+                                          onPressed: () async {
+                                            if (await isLocationEnabled) {
+                                              _isTracking.value =
+                                                  !_isTracking.value;
+                                              _blocMap.onTrackingPressed(
+                                                  _isTracking.value);
+                                            }
                                           },
-                                        icon: Icons.gps_fixed,
-                                        isActive: isTracking,
-                                      );
-                                    }
-                                  ),
+                                          icon: Icons.gps_fixed,
+                                          isActive: isTracking,
+                                        );
+                                      }),
                                   MButton(
                                     onPressed: _blocMap.onFountainsBtnClicked,
                                     isActive: mapData?.showFountains != true,
@@ -471,8 +477,9 @@ class ViewMapState extends State<ViewMap> {
                                               return Column(
                                                 children: [
                                                   MButton(
-                                                    onPressed: (){
-                                                      _isMenuOpen.value = !_isMenuOpen.value;
+                                                    onPressed: () {
+                                                      _isMenuOpen.value =
+                                                          !_isMenuOpen.value;
                                                     },
                                                     icon: Icons.menu,
                                                     isActive: isMenuOpen,
@@ -895,6 +902,14 @@ class ViewMapState extends State<ViewMap> {
             ],
           );
         });
+  }
+
+  void _initState() async {
+    await Future.delayed(Duration.zero, () async {
+      await LocationHelper().initialize(context);
+      final xxx = await LocationHelper().isTrackingLocation;
+      _isTracking.value = xxx;
+    });
   }
 }
 

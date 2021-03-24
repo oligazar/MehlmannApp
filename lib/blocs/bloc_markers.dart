@@ -74,7 +74,7 @@ class BlocMarkers extends Disposable {
 			_markersData.add(data);
 		});
 		
-		Geolocator().getCurrentPosition();
+		Geolocator.getCurrentPosition();
 	}
 
 	set clusters(List<ModelMarker> clusters) {

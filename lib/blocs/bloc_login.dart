@@ -26,7 +26,7 @@ class BlocLogin extends Disposable {
 	
 	set email(String val) {
 		_email = val;
-		_showBackendSettings.value = val.startsWith(TEST_PREFIX);
+		_showBackendSettings.add(val.startsWith(TEST_PREFIX));
 	}
 
   Future<LoginResponse> auth(BuildContext context) async {

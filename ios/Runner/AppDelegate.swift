@@ -2,6 +2,7 @@ import UIKit
 import Flutter
 import GoogleMaps
 import Firebase
+import background_locator
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
@@ -13,11 +14,14 @@ import Firebase
     GMSServices.provideAPIKey("AIzaSyD72_WqxqD9vrCSbfZM42l1ATfNa6TqGLc")
     FirebaseApp.configure()
     GeneratedPluginRegistrant.register(with: self)
-    
-//    if #available(iOS 10.0, *) {
-//      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
-//    }
+    BackgroundLocatorPlugin.setPluginRegistrantCallback(registerPlugins)
     
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
+}
+
+func registerPlugins(registry: FlutterPluginRegistry) -> () {
+    if (!registry.hasPlugin("BackgroundLocatorPlugin")) {
+        GeneratedPluginRegistrant.register(with: registry)
+    }
 }

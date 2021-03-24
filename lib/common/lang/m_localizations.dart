@@ -95,6 +95,10 @@ class MLocalizations {
   String get minutes => "Minuten";
 
   String get seconds => "Sekunden";
+
+  String get notificationTitle => "GPS Aufzeichnung";
+
+  String get notificationSubtitle => "MM GPS Aufzeichnung";
 	
   static MLocalizations of(BuildContext buildContext) => MLocalizations();
 
