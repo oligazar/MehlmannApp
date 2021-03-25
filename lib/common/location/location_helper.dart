@@ -69,8 +69,6 @@ class LocationHelper {
 	final isTracking = ValueNotifier<bool>(false);
 	final locationData = ValueNotifier<PositionResponse>(null);
 	
-	MLocalizations _loc;
-	
 	static Future<bool> get _isRunning async {
 		final isRunning = await BackgroundLocator.isServiceRunning();
 		MLogger().d('Running: $isRunning');
@@ -78,8 +76,7 @@ class LocationHelper {
 	}
 	
 	// Call this as early as possible
-	Future init(BuildContext context) async {
-		_loc = context.loc;
+	Future init() async {
 		if (_sendPort != null) {
 			IsolateNameServer.removePortNameMapping(_isolateName);
 		}
@@ -141,11 +138,9 @@ class LocationHelper {
 		Map<String, dynamic> data = {'countInit': 1};
 		// Comment initDataCallback, so service not set init variable,
 		// variable stay with value of last run after unRegisterLocationUpdate
-		final notificationTitle = _loc?.notificationTitle ?? "GPS Aufzeichnung";
-		final notificationMsg =
-				_loc?.notificationSubtitle ?? "MM GPS Aufzeichnung";
-		final notificationBigMsg =
-				_loc?.notificationSubtitle ?? "MM GPS Aufzeichnung";
+		final notificationTitle = "GPS Aufzeichnung";
+		final notificationMsg = "MM GPS Aufzeichnung";
+		final notificationBigMsg = "MM GPS Aufzeichnung";
 		final accuracy = _desiredAccuracy(pref.getString(PREF_ACCURACY));
 		final distanceFilter = pref.getDouble(PREF_DISTANCE_FILTER) ?? 5.0;
 		final interval = pref.getInt(PREF_INTERVAL) ?? 5;

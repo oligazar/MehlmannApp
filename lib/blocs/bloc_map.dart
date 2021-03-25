@@ -28,6 +28,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	final _bounds = rx.BehaviorSubject<LatLngBounds>();
 	
 	final _measurement = rx.BehaviorSubject<Measurements>();
+	final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
 	
 	final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
 	final _fieldInfo = rx.BehaviorSubject<Field>();
@@ -515,7 +516,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		);
 		_updateBounds(_fields);
 		
-		_listenLivePositions();
+		_initPositionsTracking();
 	}
 	
 	Set<Polygon> _createPolygons() {
@@ -692,15 +693,24 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 
   Future onTrackingPressed(bool isTracking) async {
 		print("isTracking: $isTracking");
+		isTrackingNotifier.value = isTracking;
 		if (isTracking) {
 			LocationHelper().startListeningLocation();
+			LocationHelper().locationData.removeListener(_positionChanged);
+			LocationHelper().locationData.addListener(_positionChanged);
 		} else {
 			LocationHelper().stopListeningLocation();
+			LocationHelper().locationData.removeListener(_positionChanged);
 		}
   }
 
-  void _listenLivePositions() {
-		LocationHelper().locationData.addListener(_positionChanged);
+  void _initPositionsTracking() async {
+	  await LocationHelper().init();
+	  final isTracking = await LocationHelper().isTrackingLocation;
+	  isTrackingNotifier.value = isTracking;
+	  if (isTracking) {
+			LocationHelper().locationData.addListener(_positionChanged);
+	  }
   }
   
 	void _positionChanged() {

@@ -85,7 +85,6 @@ class ViewMapState extends State<ViewMap> {
   StreamSubscription<Field> _fieldInfoSubscription;
   StreamSubscription<Fountain> _fountainInfoSubscription;
   ValueNotifier<bool> _isMenuOpen = ValueNotifier(false);
-  ValueNotifier<bool> _isTracking = ValueNotifier(false);
 
   final String _channelName = 'UpdatesChannel';
 
@@ -205,7 +204,6 @@ class ViewMapState extends State<ViewMap> {
       }
     });
     _initActionCable();
-    _initState();
     super.initState();
   }
 
@@ -356,15 +354,13 @@ class ViewMapState extends State<ViewMap> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   ValueListenableBuilder<bool>(
-                                      valueListenable: _isTracking,
+                                      valueListenable: _blocMap.isTrackingNotifier,
                                       builder: (context, isTracking, child) {
                                         return MButton(
                                           onPressed: () async {
                                             if (await isLocationEnabled) {
-                                              _isTracking.value =
-                                                  !_isTracking.value;
                                               _blocMap.onTrackingPressed(
-                                                  _isTracking.value);
+                                                  !isTracking);
                                             }
                                           },
                                           icon: Icons.gps_fixed,
@@ -906,14 +902,6 @@ class ViewMapState extends State<ViewMap> {
             ],
           );
         });
-  }
-
-  void _initState() async {
-    await Future.delayed(Duration.zero, () async {
-      await LocationHelper().init(context);
-      final xxx = await LocationHelper().isTrackingLocation;
-      _isTracking.value = xxx;
-    });
   }
 }
 
