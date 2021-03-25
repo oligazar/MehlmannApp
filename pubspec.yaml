@@ -44,9 +44,7 @@ dependencies:
   firebase_core: ^1.0.2
   firebase_crashlytics: ^1.0.0
   action_cable_stream: ^0.0.3
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  background_locator: ^1.5.0+1
   cupertino_icons: ^1.0.2
 
 dependency_overrides:
@@ -75,8 +73,8 @@ dev_dependencies:
   location_permissions:
     path: /Users/Admin/Development/flutter/plugins/flutter_permission_plugin/packages/location_permissions
 
-  background_locator:
-    path: /Users/Admin/Development/Android/custom/AgForce/background_locator
+#  background_locator:
+#    path: /Users/Admin/Development/Android/custom/AgForce/background_locator
 
 flutter:
 
