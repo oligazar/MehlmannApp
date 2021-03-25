@@ -41,7 +41,6 @@ import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:post_frame_image_builder/post_frame_image_builder.dart';
 import 'package:cluster_builder/cluster_builder.dart';
-import 'package:mahlmann_app/common/functions.dart';
 
 // drawing custom marker on the field: https://github.com/flutter/flutter/issues/26109
 class ScreenMap extends StatelessWidget {
@@ -308,6 +307,11 @@ class ViewMapState extends State<ViewMap> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              ValueListenableBuilder<PositionResponse>(
+                                  valueListenable: LocationHelper().locationData,
+                                  builder: (_, data, __) {
+                                    return Text("Position: $data");
+                                  }),
                               StreamBuilder<Measurements>(
                                   stream: _blocMap.measurements,
                                   builder: (context, snapshot) {
@@ -364,7 +368,7 @@ class ViewMapState extends State<ViewMap> {
                                             }
                                           },
                                           icon: Icons.gps_fixed,
-                                          isActive: isTracking,
+                                          isActive: !isTracking,
                                         );
                                       }),
                                   MButton(
@@ -906,7 +910,7 @@ class ViewMapState extends State<ViewMap> {
 
   void _initState() async {
     await Future.delayed(Duration.zero, () async {
-      await LocationHelper().initialize(context);
+      await LocationHelper().init(context);
       final xxx = await LocationHelper().isTrackingLocation;
       _isTracking.value = xxx;
     });

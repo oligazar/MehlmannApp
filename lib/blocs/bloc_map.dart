@@ -514,6 +514,8 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 			labels: labels,
 		);
 		_updateBounds(_fields);
+		
+		_listenLivePositions();
 	}
 	
 	Set<Polygon> _createPolygons() {
@@ -696,4 +698,16 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 			LocationHelper().stopListeningLocation();
 		}
   }
+
+  void _listenLivePositions() {
+		LocationHelper().locationData.addListener(_positionChanged);
+  }
+  
+	void _positionChanged() {
+		final xxx = LocationHelper().locationData.value;
+		print("New position: $xxx");
+		if (xxx?.lat != null && xxx?.lon != null) {
+			markCurrentPosition(LatLng(xxx.lat, xxx.lon));
+		}
+	}
 }
