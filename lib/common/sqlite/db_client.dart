@@ -6,14 +6,15 @@ import 'package:mahlmann_app/common/interfaces/db_saveable.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
 import 'package:mahlmann_app/models/built_value/fountain.dart';
 import 'package:mahlmann_app/models/built_value/group.dart';
+import 'package:mahlmann_app/models/built_value/path_point.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DbClient {
   
-  // static final _databaseVersion = 2; - should be!!
-  static final _databaseVersion = 2;
+  // static final _databaseVersion = 3; - should be!!
+  static final _databaseVersion = 5;
   
   Future<Database> get database async {
     if (_db != null) return _db;
@@ -83,7 +84,40 @@ class DbClient {
     );
   }
 
+  // PathPoints
+
+  Future insertPathPoint(PathPoint pathPoint) async {
+    await _insertMap([pathPoint]?.map((f) => f.toDb())?.toList() ?? [], TABLE_PATH_POINTS,
+        shouldClearTable: false);
+  }
+  
+  Future<List<PathPoint>> queryPathPoints({
+    String query = "",
+    int id,
+  }) async {
+    final argsCol = id != null && id > 0 ? COL_ID : null;
+    final args = argsCol != null ? [id] : null;
+    return queryListIn(
+        TABLE_PATH_POINTS,
+        PathPoint.queryColumns,
+            (m) => PathPoint.fromDb(m),
+        queryCol: COL_NAME,
+        query: query,
+        argsCol: argsCol,
+        args: args
+    );
+  }
+
+  Future clearPathPoints() async {
+    await deleteAllFrom(TABLE_PATH_POINTS);
+  }
+  
   // helpers
+
+  Future<int> deleteAllFrom(String table) async {
+    Database db = await database;
+    return db.rawDelete("DELETE FROM $table");
+  }
 
   Future<List<T>> queryListIn<T>(
     String table,
@@ -137,12 +171,14 @@ class DbClient {
     Group.tableCreator,
     Fountain.tableCreator,
     Field.tableCreator,
+    PathPoint.tableCreator,
   ];
 
   final List<String> _tablesToDelete = [
     TABLE_GROUPS,
     TABLE_FOUNTAINS,
-    TABLE_FIELDS
+    TABLE_FIELDS,
+    TABLE_PATH_POINTS
   ];
 
   DbClient._internal();
@@ -246,4 +282,6 @@ class DbClient {
     });
     return results.isNotEmpty ? results.join(" AND ") : null;
   }
+
+  
 }

@@ -77,6 +77,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	bool get hasFieldInfo => _fieldInfo.hasValue;
 	
 	final List<LatLng> _pins = <LatLng>[];
+	final List<LatLng> _points = <LatLng>[];
 	
 	BtnsMode get currentMode => _mode.value;
 	
@@ -314,16 +315,18 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	}
 	
 	void markCurrentPosition(LatLng latLng) {
-		final marker = ModelMarker(
-			id: "markerId-currentPosition",
-			latLng: latLng,
-			hue: BitmapDescriptor.hueRed,
-			// color: f.name,
-		);
+		final marker = _createModelMarker(latLng);
 		_updateMapData(
 			currentPosition: marker,
 		);
 	}
+	
+	ModelMarker _createModelMarker(LatLng latLng) => ModelMarker(
+		id: "markerId-currentPosition",
+		latLng: latLng,
+		hue: BitmapDescriptor.hueRed,
+		// color: f.name,
+	);
 	
 	// private functions
 	
@@ -373,6 +376,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	}
 	
 	Set<Polyline> _createPolylines() {
+		final polylines = Set<Polyline>();
 		final optionA = (currentMode == BtnsMode.measureDistance ||
 				currentMode == BtnsMode.searchDistance) &&
 				_pins.length > 1;
@@ -387,10 +391,18 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 				color: Colors.blue,
 				points: _pins,
 			);
-			return Set.of([polyline]);
-		} else {
-			return Set<Polyline>();
+			polylines.add(polyline);
 		}
+		if (_points.isNotEmpty) {
+			final path = Polyline(
+				polylineId: PolylineId("path"),
+				width: 2,
+				color: Colors.red,
+				points: _points,
+			);
+			polylines.add(path);
+		}
+		return polylines;
 	}
 	
 	void _updateMapData({
@@ -701,6 +713,11 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		} else {
 			LocationHelper().stopListeningLocation();
 			LocationHelper().locationData.removeListener(_positionChanged);
+			_points.clear();
+			_updateMapData(
+				polylines: _createPolylines(),
+			);
+			await DbClient().clearPathPoints();
 		}
   }
 
@@ -709,15 +726,23 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	  final isTracking = await LocationHelper().isTrackingLocation;
 	  isTrackingNotifier.value = isTracking;
 	  if (isTracking) {
+	  	final points = await DbClient().queryPathPoints();
+	  	_points.clear();
+	  	_points.addAll(points.map((p) => LatLng(p.lat, p.lng)));
 			LocationHelper().locationData.addListener(_positionChanged);
 	  }
   }
   
 	void _positionChanged() {
-		final xxx = LocationHelper().locationData.value;
-		print("New position: $xxx");
-		if (xxx?.lat != null && xxx?.lon != null) {
-			markCurrentPosition(LatLng(xxx.lat, xxx.lon));
+		final position = LocationHelper().locationData.value;
+		print("New position: $position");
+		if (position?.lat != null && position?.lng != null) {
+			final latLng = LatLng(position.lat, position.lng);
+			_points.add(latLng);
+			_updateMapData(
+				currentPosition: _createModelMarker(latLng),
+				polylines: _createPolylines(),
+			);
 		}
 	}
 }

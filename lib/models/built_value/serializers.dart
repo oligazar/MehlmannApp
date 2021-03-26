@@ -8,6 +8,7 @@ import 'package:mahlmann_app/models/built_value/group.dart';
 import 'package:mahlmann_app/models/built_value/measurements.dart';
 import 'package:mahlmann_app/models/built_value/objects_response.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:mahlmann_app/models/built_value/path_point.dart';
 
 part 'serializers.g.dart';
 
@@ -19,6 +20,7 @@ part 'serializers.g.dart';
 	Group,
 	ObjectsResponse,
 	Measurements,
+	// PathPoint,
 ])
 final Serializers serializers =
       (_$serializers.toBuilder()..addPlugin(StandardJsonPlugin())).build();

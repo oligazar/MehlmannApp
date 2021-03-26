@@ -305,11 +305,11 @@ class ViewMapState extends State<ViewMap> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              ValueListenableBuilder<PositionResponse>(
-                                  valueListenable: LocationHelper().locationData,
-                                  builder: (_, data, __) {
-                                    return Text("Position: $data");
-                                  }),
+                              // ValueListenableBuilder<PositionResponse>(
+                              //     valueListenable: LocationHelper().locationData,
+                              //     builder: (_, data, __) {
+                              //       return Text("Position: $data");
+                              //     }),
                               StreamBuilder<Measurements>(
                                   stream: _blocMap.measurements,
                                   builder: (context, snapshot) {
@@ -482,7 +482,7 @@ class ViewMapState extends State<ViewMap> {
                                                           !_isMenuOpen.value;
                                                     },
                                                     icon: Icons.menu,
-                                                    isActive: isMenuOpen,
+                                                    isActive: !isMenuOpen,
                                                   ),
                                                   if (isMenuOpen)
                                                     MButton(

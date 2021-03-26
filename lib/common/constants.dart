@@ -35,6 +35,7 @@ const PREF_DISTANCE_FILTER = "distanceFilter";
 const String TABLE_GROUPS = 'tableGroups';
 const String TABLE_FOUNTAINS = 'tableFountains';
 const String TABLE_FIELDS = 'tableFields';
+const String TABLE_PATH_POINTS = "path_points";
 
 const String COL_ID = 'id';
 const String COL_LAT = 'lat';
