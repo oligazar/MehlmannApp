@@ -32,6 +32,14 @@ class Prefs {
   
   static Future<bool> get isAuthorized async => token.then((token) => token != null);
 
+  static Future<Map<String, String>> get autoFill async {
+	  final SharedPreferences pref = await sp;
+	  return  {
+	  	"email": pref.getString("email"),
+	  	"password": pref.getString("password"),
+	  };
+  }
+
   static Future<void> saveLoginResponse(LoginResponse resp) async {
 	  final SharedPreferences pref = await sp;
 	  pref.setString(PREF_TOKEN, resp.token);

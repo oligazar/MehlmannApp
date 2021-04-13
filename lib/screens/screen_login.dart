@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_login.dart';
 import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
+import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/models/response_wrapper.dart';
 import 'package:mahlmann_app/models/login_response.dart';
 import 'package:mahlmann_app/widgets/preference_radio_list.dart';
@@ -12,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:mahlmann_app/common/field_validator.dart';
 
+// https://www.miradore.com/blog/mdm-mobile-device-management/
 class ScreenLogin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -33,6 +36,7 @@ class _ViewLoginState extends State<ViewLogin> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _autoValidate = false;
   bool _obscureText = true;
+  final TextEditingController _typeAheadController = TextEditingController();
 
   BlocLogin get _bloc => context.provide<BlocLogin>();
 
@@ -86,44 +90,89 @@ class _ViewLoginState extends State<ViewLogin> {
   Widget _formUI() {
     final _bloc = context.provide<BlocLogin>();
     final _loc = context.loc;
-    return Column(
-      children: <Widget>[
-        TextFormField(
-          decoration: InputDecoration(
-            labelText: _loc.promptEmail,
-            hintText: _loc.hintEmail,
+    return FutureBuilder(
+      future: Prefs.autoFill,
+      builder: (context, snapshot) {
+        // final map = snapshot.data ?? {};
+        // final email = map["email"];
+        // final pass = map["password"];
+        return AutofillGroup(
+          child: Column(
+            children: <Widget>[
+              TextFormField(
+                autofillHints: [ AutofillHints.email ],
+                decoration: InputDecoration(
+                  labelText: _loc.promptEmail,
+                  hintText: _loc.hintEmail,
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: _loc.errorInvalidEmail.ifInvalidEmail,
+                onChanged: (String val) {
+                  _bloc.email = val;
+                },
+                onSaved: (String val) {
+                  _bloc.email = val;
+                },
+              ),
+              // _buildTypeAheadField(),
+              TextFormField(
+                autofillHints: [ AutofillHints.password ],
+                decoration: _passwordDecoration,
+                keyboardType: TextInputType.text,
+                validator: _loc.errorInvalidPassword.ifLessThan,
+                obscureText: _obscureText,
+                onSaved: (String val) {
+                  _bloc.pass = val;
+                },
+              ),
+              const SizedBox(
+                height: 22.0,
+              ),
+              Container(
+                width: double.infinity,
+                child: ElevatedButton(
+                  key: Key(LOGIN_BTN),
+                  onPressed: _tryLogin,
+                  child: Text('Login'.toUpperCase()),
+                ),
+              ),
+              const SizedBox(height: 22),
+            ],
           ),
-          keyboardType: TextInputType.emailAddress,
-          validator: _loc.errorInvalidEmail.ifInvalidEmail,
-          onChanged: (String val) {
-            _bloc.email = val;
-          },
-          onSaved: (String val) {
-            _bloc.email = val;
-          },
+        );
+      },
+    );
+  }
+  
+  Widget _buildTypeAheadField() {
+    return TypeAheadField(
+      textFieldConfiguration: TextFieldConfiguration(
+        controller: _typeAheadController,
+        autofocus: true,
+        style: DefaultTextStyle.of(context).style,
+        decoration: InputDecoration(
+          labelText: _loc.promptEmail,
+          hintText: _loc.hintEmail,
         ),
-        TextFormField(
-          decoration: _passwordDecoration,
-          keyboardType: TextInputType.text,
-          validator: _loc.errorInvalidPassword.ifLessThan,
-          obscureText: _obscureText,
-          onSaved: (String val) {
-            _bloc.pass = val;
-          },
-        ),
-        const SizedBox(
-          height: 22.0,
-        ),
-        Container(
-          width: double.infinity,
-          child: ElevatedButton(
-            key: Key(LOGIN_BTN),
-            onPressed: _tryLogin,
-            child: Text('Login'.toUpperCase()),
-          ),
-        ),
-        const SizedBox(height: 22),
-      ],
+      ),
+      suggestionsCallback: (pattern) async {
+        final string = "frye-admin@mahlmann.com";
+        if (pattern.length > 2 && string.contains(pattern)) {
+          return ["frye-admin@mahlmann.com"];
+        }
+        return [];
+      },
+      itemBuilder: (context, suggestion) {
+        return ListTile(
+          title: Text(suggestion),
+        );
+      },
+      noItemsFoundBuilder: (context) => null,
+      transitionBuilder: (context, box, controller) => box,
+      onSuggestionSelected: (suggestion) {
+        print("$suggestion selected");
+        _typeAheadController.text = suggestion;
+      },
     );
   }
 

@@ -7,6 +7,7 @@ import 'package:rxdart/rxdart.dart' as rx;
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/models/login_response.dart';
 import 'package:mahlmann_app/common/extensions.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BlocLogin extends Disposable {
   String _email;
@@ -18,6 +19,16 @@ class BlocLogin extends Disposable {
   Stream<bool> get showBackendSettings => _showBackendSettings.stream;
   Stream<ResponseWrapper<LoginResponse>> get userLogin => _userLogin.stream;
 
+  BlocLogin() {
+  	_setupAutoFill();
+  }
+  
+  _setupAutoFill() async {
+	  final pref = await SharedPreferences.getInstance();
+	  pref.setString("email", "frye-admin@mahlmann.com");
+	  pref.setString("password", "qwerty123");
+  }
+  
 	@override
 	void dispose() {
 		_userLogin.close();
