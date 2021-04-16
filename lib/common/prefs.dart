@@ -34,8 +34,9 @@ class Prefs {
 
   static Future<Map<String, String>> get autoFill async {
 	  final SharedPreferences pref = await sp;
+	  // Managed configuration keys: 'username' & 'password"
 	  return  {
-	  	"email": pref.getString("email"),
+	  	"email": pref.getString("username"),
 	  	"password": pref.getString("password"),
 	  };
   }
