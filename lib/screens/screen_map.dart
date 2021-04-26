@@ -687,6 +687,9 @@ class ViewMapState extends State<ViewMap> {
         await _zoomFitBounds(data);
       }
     });
+    if (await isLocationEnabled) {
+      _blocMap.onTrackingPressed(true);
+    }
   }
 
   Future<void> _goToCurrentPosition() async {

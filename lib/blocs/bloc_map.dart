@@ -707,18 +707,28 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		print("isTracking: $isTracking");
 		isTrackingNotifier.value = isTracking;
 		if (isTracking) {
-			LocationHelper().startListeningLocation();
-			LocationHelper().locationData.removeListener(_positionChanged);
-			LocationHelper().locationData.addListener(_positionChanged);
+			startTracking();
 		} else {
-			LocationHelper().stopListeningLocation();
-			LocationHelper().locationData.removeListener(_positionChanged);
-			_points.clear();
-			_updateMapData(
-				polylines: _createPolylines(),
-			);
-			await DbClient().clearPathPoints();
+			stopTracking();
 		}
+  }
+  
+  startTracking() {
+	  isTrackingNotifier.value = true;
+	  LocationHelper().startListeningLocation();
+	  LocationHelper().locationData.removeListener(_positionChanged);
+	  LocationHelper().locationData.addListener(_positionChanged);
+  }
+  
+  Future stopTracking() async {
+	  isTrackingNotifier.value = false;
+	  LocationHelper().stopListeningLocation();
+	  LocationHelper().locationData.removeListener(_positionChanged);
+	  _points.clear();
+	  _updateMapData(
+		  polylines: _createPolylines(),
+	  );
+	  await DbClient().clearPathPoints();
   }
 
   void _initPositionsTracking() async {
