@@ -500,10 +500,17 @@ class ViewMapState extends State<ViewMap> {
                                                           true,
                                                     ),
                                                   if (isMenuOpen)
-                                                    MButton(
-                                                      onPressed:
-                                                      _goToCurrentPosition,
-                                                      icon: Icons.trending_up,
+                                                    ValueListenableBuilder<bool>(
+                                                      valueListenable: _blocMap.shouldShowPath,
+                                                      builder: (context, showPath, child) {
+                                                        return MButton(
+                                                          onPressed: () {
+                                                            _blocMap.onPathSwitchPressed(!showPath);
+                                                          },
+                                                          icon: Icons.trending_up,
+                                                          isActive: !showPath,
+                                                        );
+                                                      }
                                                     ),
                                                   if (isMenuOpen)
                                                     MButton(
@@ -693,9 +700,6 @@ class ViewMapState extends State<ViewMap> {
         await _zoomFitBounds(data);
       }
     });
-    if (await isLocationEnabled) {
-      _blocMap.startTracking();
-    }
   }
 
   Future<void> _goToCurrentPosition() async {

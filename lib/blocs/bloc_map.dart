@@ -29,6 +29,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	
 	final _measurement = rx.BehaviorSubject<Measurements>();
 	final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
+	final ValueNotifier<bool> shouldShowPath = ValueNotifier(false);
 	
 	final _mode = rx.BehaviorSubject<BtnsMode>.seeded(BtnsMode.none);
 	final _fieldInfo = rx.BehaviorSubject<Field>();
@@ -701,6 +702,19 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		
 		return BtnsMode.search;
 	}
+	
+	
+	Future onPathSwitchPressed(bool shouldShowPath) async {
+		print("onPathSwitchPressed: $shouldShowPath");
+		this.shouldShowPath.value = shouldShowPath;
+		if (!shouldShowPath) {
+			_points.clear();
+			_updateMapData(
+				polylines: _createPolylines(),
+			);
+			await DbClient().clearPathPoints();
+		}
+	}
 
 
   Future onTrackingPressed(bool isTracking) async {
@@ -723,11 +737,6 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	  isTrackingNotifier.value = false;
 	  LocationHelper().stopListeningLocation();
 	  LocationHelper().locationData.removeListener(_positionChanged);
-	  _points.clear();
-	  _updateMapData(
-		  polylines: _createPolylines(),
-	  );
-	  await DbClient().clearPathPoints();
   }
 
   void _initPositionsTracking() async {
@@ -750,7 +759,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 			_points.add(latLng);
 			_updateMapData(
 				currentPosition: _createModelMarker(latLng),
-				polylines: _createPolylines(),
+				polylines: shouldShowPath.value == true ? _createPolylines() : null,
 			);
 		}
 	}
