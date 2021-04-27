@@ -501,6 +501,12 @@ class ViewMapState extends State<ViewMap> {
                                                     ),
                                                   if (isMenuOpen)
                                                     MButton(
+                                                      onPressed:
+                                                      _goToCurrentPosition,
+                                                      icon: Icons.trending_up,
+                                                    ),
+                                                  if (isMenuOpen)
+                                                    MButton(
                                                         onPressed: _logOut,
                                                         icon: Icons
                                                             .power_settings_new),
@@ -688,7 +694,7 @@ class ViewMapState extends State<ViewMap> {
       }
     });
     if (await isLocationEnabled) {
-      _blocMap.onTrackingPressed(true);
+      _blocMap.startTracking();
     }
   }
 

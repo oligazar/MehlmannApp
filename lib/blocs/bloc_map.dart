@@ -705,7 +705,6 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 
   Future onTrackingPressed(bool isTracking) async {
 		print("isTracking: $isTracking");
-		isTrackingNotifier.value = isTracking;
 		if (isTracking) {
 			startTracking();
 		} else {
