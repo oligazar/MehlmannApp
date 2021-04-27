@@ -13,7 +13,6 @@ import 'package:mahlmann_app/common/api/api_base.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
-import 'package:mahlmann_app/common/location/location_helper.dart';
 import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
