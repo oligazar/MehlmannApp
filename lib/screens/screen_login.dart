@@ -195,6 +195,9 @@ class _ViewLoginState extends State<ViewLogin> {
 					labelText: _loc.promptEmail,
 					hintText: _loc.hintEmail,
 				),
+				onChanged: (String val) {
+					_bloc.email = val;
+				}
 			),
 			suggestionsCallback: (pattern) async {
 				if (pattern.length > 2 && email?.startsWith(pattern) == true) {
