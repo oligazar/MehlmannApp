@@ -36,7 +36,7 @@ class Prefs {
 	  final SharedPreferences pref = await sp;
 	  // Managed configuration keys: 'username' & 'password"
 	  return  {
-	  	"email": pref.getString("username"),
+	  	"username": pref.getString("username"),
 	  	"password": pref.getString("password"),
 	  };
   }

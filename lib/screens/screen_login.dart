@@ -13,6 +13,7 @@ import 'package:mahlmann_app/widgets/preference_radio_list.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:mahlmann_app/common/field_validator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // https://www.miradore.com/blog/mdm-mobile-device-management/
 
@@ -93,15 +94,22 @@ class _ViewLoginState extends State<ViewLogin> {
 		);
 	}
 	
+	Future<Map<String, String>> _readLoginValues() async {
+		// final SharedPreferences pref = await SharedPreferences.getInstance();
+		// await pref.setString("username", "frye-admin@mahlmann.com");
+		// await pref.setString("password", "qwerty123");
+		return Prefs.autoFill;
+	}
+	
 	Widget _formUI() {
 		final _bloc = context.provide<BlocLogin>();
 		final _loc = context.loc;
 		return FutureBuilder(
-			future: Prefs.autoFill,
+			future: _readLoginValues(),
 			builder: (context, snapshot) {
 				final map = snapshot.data ?? {};
-				final email = "frye-admin@mahlmann.com"; //map["email"];
-				final password = "qwerty123"; // map["password"];
+				final email = map["username"];
+				final password = map["password"];
 				return Column(
 					children: <Widget>[
 						// _buildEmailField(),
@@ -189,7 +197,7 @@ class _ViewLoginState extends State<ViewLogin> {
 				),
 			),
 			suggestionsCallback: (pattern) async {
-				if (email?.startsWith(pattern) == true) {
+				if (pattern.length > 2 && email?.startsWith(pattern) == true) {
 					return [email];
 				}
 				return [];

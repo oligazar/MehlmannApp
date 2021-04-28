@@ -769,7 +769,7 @@ class ViewMapState extends State<ViewMap> {
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) => TwoActionsDialog(
-          title: _loc.dialogTitleConfirmLogout,
+          title: _loc?.dialogTitleConfirmLogout,
           btnCancelTitle: _loc.btnCancel,
           cancelAction: () => Navigator.of(context).pop(false),
           btnOkTitle: _loc.btnOk,
