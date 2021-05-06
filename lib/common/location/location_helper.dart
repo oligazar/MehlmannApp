@@ -144,8 +144,8 @@ class LocationHelper {
     final notificationMsg = "MM GPS Aufzeichnung";
     final notificationBigMsg = "MM GPS Aufzeichnung";
     final accuracy = _desiredAccuracy(pref.getString(PREF_ACCURACY));
-    final distanceFilter = pref.getDouble(PREF_DISTANCE_FILTER) ?? 5.0;
-    final interval = pref.getInt(PREF_INTERVAL) ?? 5;
+    final distanceFilter = 0.0; // pref.getDouble(PREF_DISTANCE_FILTER) ?? 5.0;
+    final interval = 1; // pref.getInt(PREF_INTERVAL) ?? 5;
     await BackgroundLocator.registerLocationUpdate(_onLocationData,
         initCallback: _onInitBackgroundLocation,
         initDataCallback: data,
