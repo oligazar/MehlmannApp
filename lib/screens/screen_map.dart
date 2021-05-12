@@ -41,6 +41,8 @@ import 'package:mahlmann_app/common/extensions.dart';
 import 'package:post_frame_image_builder/post_frame_image_builder.dart';
 import 'package:cluster_builder/cluster_builder.dart';
 
+import 'screen_preferences.dart';
+
 // drawing custom marker on the field: https://github.com/flutter/flutter/issues/26109
 class ScreenMap extends StatelessWidget {
   @override
@@ -477,8 +479,12 @@ class ViewMapState extends State<ViewMap> {
                                                 children: [
                                                   MButton(
                                                     onPressed: () {
-                                                      _isMenuOpen.value =
-                                                          !_isMenuOpen.value;
+                                                      // _isMenuOpen.value =
+                                                      //     !_isMenuOpen.value;
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(builder: (context) => ScreenPreferences()),
+                                                      );
                                                     },
                                                     icon: Icons.menu,
                                                     isActive: !isMenuOpen,

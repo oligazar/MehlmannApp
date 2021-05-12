@@ -28,6 +28,9 @@ const String PREF_EXPIRY = 'prefExpiry';
 const String PREF_EMAIL = 'prefEmail';
 const String PREF_TOKEN = 'prefToken';
 
+const String PREF_POSITION_TRACKING = 'positionTracking';
+const String PREF_ROUTE_TRACKING = 'routeTracking';
+
 const PREF_INTERVAL = "prefInterval";
 const PREF_ACCURACY = "prefAccuracy";
 const PREF_DISTANCE_FILTER = "distanceFilter";

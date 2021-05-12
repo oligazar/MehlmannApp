@@ -51,6 +51,10 @@ class MLocalizations {
   String get cabbage => "Kohlfähigkeit";
 
   String get titleArea => "Fläche";
+  
+  String get buildVersion => "Build-Version";
+  
+  String get titlePreferences => "Einstellungen";
 
   String get comments => "Kommentare";
   
