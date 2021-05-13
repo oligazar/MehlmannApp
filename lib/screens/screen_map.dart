@@ -15,7 +15,6 @@ import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
 import 'package:mahlmann_app/common/map_opener.dart';
 import 'package:mahlmann_app/common/prefs.dart';
-import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/models/built_value/btns_mode.dart';
 import 'package:mahlmann_app/models/built_value/comment.dart';
 import 'package:mahlmann_app/models/built_value/field.dart';
@@ -28,7 +27,6 @@ import 'package:mahlmann_app/widgets/dialogs/info_row.dart';
 import 'package:mahlmann_app/widgets/dialogs/m_dialog.dart';
 import 'package:mahlmann_app/widgets/dialogs/one_action_dialog.dart';
 import 'package:mahlmann_app/widgets/dialogs/sentence_inbox_dialog.dart';
-import 'package:mahlmann_app/widgets/dialogs/two_actions_dialog.dart';
 import 'package:mahlmann_app/widgets/exception_handler.dart';
 import 'package:mahlmann_app/widgets/m_button.dart';
 import 'package:mahlmann_app/widgets/m_progress_indicator.dart';
@@ -40,6 +38,7 @@ import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:post_frame_image_builder/post_frame_image_builder.dart';
 import 'package:cluster_builder/cluster_builder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screen_preferences.dart';
 
@@ -468,15 +467,18 @@ class ViewMapState extends State<ViewMap> {
                                               return Column(
                                                 children: [
                                                   MButton(
-                                                    onPressed: () {
+                                                    onPressed: () async {
                                                       // _isMenuOpen.value =
                                                       //     !_isMenuOpen.value;
-                                                      Navigator.push(
+                                                      await Navigator.push(
                                                         context,
                                                         MaterialPageRoute(
                                                             builder: (context) =>
                                                                 ScreenPreferences()),
                                                       );
+                                                      final isSatelliteMode = await SharedPreferences.getInstance().then((p) => p.getBool(PREF_SATELLITE_MODE) == true);
+                                                      _blocMap.switchMapType(isSatelliteMode);
+                                                      _blocMap.refreshAccordingToSettings();
                                                     },
                                                     icon: Icons.menu,
                                                     isActive: !isMenuOpen,
@@ -486,15 +488,6 @@ class ViewMapState extends State<ViewMap> {
                                                       onPressed:
                                                           _goToCurrentPosition,
                                                       icon: Icons.location_on,
-                                                    ),
-                                                  if (isMenuOpen)
-                                                    MButton(
-                                                      onPressed: _blocMap
-                                                          .switchMapType,
-                                                      icon: Icons.map,
-                                                      isActive: mapData
-                                                              ?.isSatelliteView !=
-                                                          true,
                                                     ),
                                                   if (isMenuOpen)
                                                     ValueListenableBuilder<

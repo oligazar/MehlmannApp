@@ -30,6 +30,7 @@ const String PREF_TOKEN = 'prefToken';
 
 const String PREF_POSITION_TRACKING = 'positionTracking';
 const String PREF_ROUTE_TRACKING = 'routeTracking';
+const String PREF_SATELLITE_MODE = 'satelliteMode';
 
 const PREF_INTERVAL = "prefInterval";
 const PREF_ACCURACY = "prefAccuracy";

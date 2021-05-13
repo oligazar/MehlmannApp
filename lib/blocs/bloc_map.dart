@@ -646,8 +646,8 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		return color;
 	}
 	
-	void switchMapType() {
-		_updateMapData(isSatelliteView: !_mapData.value.isSatelliteView);
+	void switchMapType(bool isSatelliteMode) {
+		_updateMapData(isSatelliteView: isSatelliteMode);
 	}
 	
 	Future onRefreshBtnClicked() async {
@@ -762,5 +762,11 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 				polylines: shouldShowPath.value == true ? _createPolylines() : null,
 			);
 		}
+	}
+	
+	Future refreshAccordingToSettings() async {
+		// read all settings and react accordingly
+		// 1. position tracking
+		// 2. route tracking
 	}
 }

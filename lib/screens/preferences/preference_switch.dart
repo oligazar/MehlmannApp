@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferenceSwitch extends StatefulWidget {
   final String title;
-  final String subTitle;
+  final String Function(bool) subTitleBuilder;
   final String prefKey;
   final Function(bool) onSwitched;
   final IconData icon;
@@ -14,7 +14,7 @@ class PreferenceSwitch extends StatefulWidget {
   const PreferenceSwitch({
     Key key,
     this.title = "",
-    this.subTitle = "",
+    this.subTitleBuilder,
     @required this.prefKey,
     this.onSwitched,
     this.icon,
@@ -41,7 +41,7 @@ class _PreferenceSwitchState extends State<PreferenceSwitch> {
     return Preference(
       title: widget.title,
       onTap: () => _onChecked(!_isChecked),
-      subTitle: widget.subTitle,
+      subTitle: widget.subTitleBuilder != null ? widget.subTitleBuilder(_isChecked) : "",
       icon: widget.icon,
       child: Switch(
         activeColor: MColors.primaryDark,

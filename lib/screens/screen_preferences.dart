@@ -1,10 +1,10 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:mahlmann_app/common/functions.dart';
-import 'package:mahlmann_app/common/m_colors.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/screens/preferences/preference.dart';
@@ -40,9 +40,11 @@ class ScreenPreferences extends StatelessWidget {
                       title: "Activate route tracking",
                     ),
                     PreferenceSwitch(
-                      prefKey: PREF_ROUTE_TRACKING,
+                      prefKey: PREF_SATELLITE_MODE,
                       title: loc.mapMode,
-                      subTitle: "Map/Satellite",
+                      subTitleBuilder: (isSatellite) {
+                        return isSatellite ? "Satellite" : "Map";
+                      },
                     ),
                     if (Platform.isIOS) Preference(
                       title: "Plist debug",
