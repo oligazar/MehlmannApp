@@ -354,20 +354,10 @@ class ViewMapState extends State<ViewMap> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  ValueListenableBuilder<bool>(
-                                      valueListenable: _blocMap.isTrackingNotifier,
-                                      builder: (context, isTracking, child) {
-                                        return MButton(
-                                          onPressed: () async {
-                                            if (await isLocationEnabled) {
-                                              _blocMap.onTrackingPressed(
-                                                  !isTracking);
-                                            }
-                                          },
-                                          icon: Icons.gps_fixed,
-                                          isActive: !isTracking,
-                                        );
-                                      }),
+                                  MButton(
+                                    onPressed: _goToCurrentPosition,
+                                    icon: Icons.location_on,
+                                  ),
                                   MButton(
                                     onPressed: _blocMap.onFountainsBtnClicked,
                                     isActive: mapData?.showFountains != true,
@@ -483,7 +473,9 @@ class ViewMapState extends State<ViewMap> {
                                                       //     !_isMenuOpen.value;
                                                       Navigator.push(
                                                         context,
-                                                        MaterialPageRoute(builder: (context) => ScreenPreferences()),
+                                                        MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                ScreenPreferences()),
                                                       );
                                                     },
                                                     icon: Icons.menu,
@@ -505,23 +497,24 @@ class ViewMapState extends State<ViewMap> {
                                                           true,
                                                     ),
                                                   if (isMenuOpen)
-                                                    ValueListenableBuilder<bool>(
-                                                      valueListenable: _blocMap.shouldShowPath,
-                                                      builder: (context, showPath, child) {
-                                                        return MButton(
-                                                          onPressed: () {
-                                                            _blocMap.onPathSwitchPressed(!showPath);
-                                                          },
-                                                          icon: Icons.trending_up,
-                                                          isActive: !showPath,
-                                                        );
-                                                      }
-                                                    ),
-                                                  if (isMenuOpen)
-                                                    MButton(
-                                                        onPressed: _logOut,
-                                                        icon: Icons
-                                                            .power_settings_new),
+                                                    ValueListenableBuilder<
+                                                            bool>(
+                                                        valueListenable:
+                                                            _blocMap
+                                                                .shouldShowPath,
+                                                        builder: (context,
+                                                            showPath, child) {
+                                                          return MButton(
+                                                            onPressed: () {
+                                                              _blocMap
+                                                                  .onPathSwitchPressed(
+                                                                      !showPath);
+                                                            },
+                                                            icon: Icons
+                                                                .trending_up,
+                                                            isActive: !showPath,
+                                                          );
+                                                        }),
                                                 ],
                                               );
                                             }),
@@ -765,28 +758,6 @@ class ViewMapState extends State<ViewMap> {
     final urls = MapOpener.buildMapUrls(location: LatLng(lat, lng));
     if (await MapOpener.canOpen(urls)) {
       MapOpener.openMap(urls);
-    }
-  }
-
-  Future _logOut({bool shouldShowDialog = true}) async {
-    bool shouldLogout;
-    if (shouldShowDialog) {
-      shouldLogout = await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) => TwoActionsDialog(
-          title: _loc?.dialogTitleConfirmLogout,
-          btnCancelTitle: _loc.btnCancel,
-          cancelAction: () => Navigator.of(context).pop(false),
-          btnOkTitle: _loc.btnOk,
-          okAction: () => Navigator.of(context).pop(true),
-        ),
-      );
-    }
-    if (shouldLogout) {
-      await DbClient().clearAllTables();
-      Prefs.logout();
-      AppMahlmann.of(context).setIsAuthorized(false);
     }
   }
 

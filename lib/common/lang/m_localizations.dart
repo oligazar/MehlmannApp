@@ -29,6 +29,8 @@ class MLocalizations {
   String get sentenceInbox => "Satz Inbox";
 
   String get logOut => "Ausloggen";
+  
+  String get mapMode => "Kartenmodus";
 
   String get currentPosition => "Aktuelle Position";
 
