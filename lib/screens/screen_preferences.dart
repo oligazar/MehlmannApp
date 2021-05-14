@@ -10,6 +10,8 @@ import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/screens/preferences/preference.dart';
 import 'package:mahlmann_app/screens/preferences/preference_group.dart';
 import 'package:mahlmann_app/screens/preferences/preference_switch.dart';
+import 'package:mahlmann_app/screens/screen_login.dart';
+import 'package:mahlmann_app/screens/screen_plist_debug.dart';
 import 'package:mahlmann_app/widgets/dialogs/two_actions_dialog.dart';
 
 import '../app_mahlmann.dart';
@@ -47,13 +49,20 @@ class ScreenPreferences extends StatelessWidget {
                       },
                     ),
                     if (Platform.isIOS) Preference(
-                      title: "Plist debug",
-                      onTap: () async {},
+                      title: loc.plistDebug,
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  ScreenPlistDebug()),
+                        );
+                      },
                     ),
                     Preference(
                       title: loc.logOut,
                       onTap: () async {
-                        // _logOut(context);
+                        _logOut(context);
                       },
                     ),
                     FutureBuilder<String>(
@@ -90,7 +99,7 @@ class ScreenPreferences extends StatelessWidget {
     if (shouldLogout) {
       await DbClient().clearAllTables();
       Prefs.logout();
-      AppMahlmann.of(context).setIsAuthorized(false);
+      context.setIsAuthorized(false);
     }
   }
 }

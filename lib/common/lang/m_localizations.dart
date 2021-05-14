@@ -31,6 +31,8 @@ class MLocalizations {
   String get logOut => "Ausloggen";
   
   String get mapMode => "Kartenmodus";
+  
+  String get plistDebug => "Plist debug";
 
   String get currentPosition => "Aktuelle Position";
 

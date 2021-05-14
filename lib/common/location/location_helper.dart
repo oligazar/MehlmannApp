@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
@@ -67,7 +68,8 @@ class LocationHelper {
   static SendPort get _sendPort =>
       IsolateNameServer.lookupPortByName(_isolateName);
 
-  static bool _isInitialized = false;
+  Completer<bool> _isInitialized = Completer();
+  
   final isTracking = ValueNotifier<bool>(false);
   final locationData = ValueNotifier<PositionResponse>(null);
 
@@ -97,12 +99,12 @@ class LocationHelper {
   // ============= Control staff ================
 
   Future<bool> get isTrackingLocation async {
-    assert(_isInitialized, "LocationHelper should be initialized before use");
+    await _isInitialized.future;
     return _isRunning;
   }
 
   Future<void> startListeningLocation() async {
-    assert(_isInitialized, "LocationHelper should be initialized before use");
+    await _isInitialized.future;
     // if (await isLocationEnabled) {
     final isNotTracking = !await _isRunning;
     MLogger().d("isNotTracking: $isNotTracking");
@@ -113,7 +115,7 @@ class LocationHelper {
   }
 
   Future<void> stopListeningLocation() async {
-    assert(_isInitialized, "LocationHelper should be initialized before use");
+    await _isInitialized.future;
 
     final isRunning = await _isRunning;
     MLogger().d("isRunning: $isRunning");
@@ -130,7 +132,7 @@ class LocationHelper {
       print('dispose for iOS');
     }
     _instance = null;
-    _isInitialized = false;
+    _isInitialized = null;
   }
 
   //
@@ -244,7 +246,7 @@ class LocationHelper {
     print('Initialization done');
 
     isTracking.value = await _isRunning;
-    _isInitialized = true;
+    _isInitialized.complete(true);
   }
 
   Future<void> _updateNotifiers(PositionResponse position) async {

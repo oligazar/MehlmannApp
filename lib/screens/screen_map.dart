@@ -476,9 +476,15 @@ class ViewMapState extends State<ViewMap> {
                                                             builder: (context) =>
                                                                 ScreenPreferences()),
                                                       );
-                                                      final isSatelliteMode = await SharedPreferences.getInstance().then((p) => p.getBool(PREF_SATELLITE_MODE) == true);
+                                                      final pref = await SharedPreferences.getInstance();
+                                                      final isSatelliteMode = pref.getBool(PREF_SATELLITE_MODE) == true;
                                                       _blocMap.switchMapType(isSatelliteMode);
-                                                      _blocMap.refreshAccordingToSettings();
+                                                      // 1. position tracking
+                                                      final isTracking = pref.getBool(PREF_POSITION_TRACKING) == true;
+                                                      _blocMap.onTrackingPressed(isTracking);
+                                                      // 2. route tracking
+                                                      final showPath = pref.getBool(PREF_ROUTE_TRACKING) == true;
+                                                      _blocMap.onPathSwitchPressed(showPath);
                                                     },
                                                     icon: Icons.menu,
                                                     isActive: !isMenuOpen,

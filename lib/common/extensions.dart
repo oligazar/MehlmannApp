@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/lang/m_localizations.dart';
+import 'package:mahlmann_app/screens/screen_login.dart';
 import 'package:provider/provider.dart';
+
+import '../app_mahlmann.dart';
 
 extension ContextExt on BuildContext {
 	
@@ -16,6 +19,14 @@ extension ContextExt on BuildContext {
 			content: content,
 			duration: duration,
 		));
+	}
+	
+	void setIsAuthorized(bool isAuthorized) {
+		Navigator.of(this).pushAndRemoveUntil(
+				MaterialPageRoute(
+					builder: (context) => isAuthorized ? ScreenData() : ScreenLogin(),
+				),
+						(Route<dynamic> route) => false);
 	}
 }
 

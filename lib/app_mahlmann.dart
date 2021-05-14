@@ -28,22 +28,12 @@ class AppMahlmann extends StatefulWidget {
 }
 
 class _AppMahlmannState extends State<AppMahlmann> {
-  bool _isAuthorized;
-  bool _showPreloader = true;
-  
   @override
   void initState() {
     super.initState();
     _initAsync();
   }
-
-  void setIsAuthorized(bool isAuthorized) {
-    setState(() {
-      if (!isAuthorized) _showPreloader = true;
-      _isAuthorized = isAuthorized;
-    });
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -68,21 +58,36 @@ class _AppMahlmannState extends State<AppMahlmann> {
   Widget _buildHomeScreen() {
     return _AppMahlmann(
       state: this,
-      child: _isAuthorized == null
-          ? Container()
-          : _isAuthorized
-              ? _showPreloader
-                  ? ScreenPreloader(() {
-                      setState(() => _showPreloader = false);
-                    })
-                  : ScreenMap()
-              : ScreenLogin(),
+      child: FutureBuilder<bool>(
+        future: Prefs.isAuthorized,
+        builder: (context, snap) {
+          final isAuthorized = snap.data == true;
+          return isAuthorized ? ScreenData() : ScreenLogin();
+        },
+      ),
     );
   }
 
   Future<void> _initAsync() async {
     final isProd = await Prefs.isProdPref;
     baseAuthority = isProd ? AUTHORITY_PRODUCTION : AUTHORITY_STAGING;
-    setIsAuthorized(await Prefs.isAuthorized);
+  }
+}
+
+class ScreenData extends StatefulWidget {
+  @override
+  _ScreenDataState createState() => _ScreenDataState();
+}
+
+class _ScreenDataState extends State<ScreenData> {
+  bool _showPreloader = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return _showPreloader
+        ? ScreenPreloader(() {
+            setState(() => _showPreloader = false);
+          })
+        : ScreenMap();
   }
 }

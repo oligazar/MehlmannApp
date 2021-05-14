@@ -36,6 +36,9 @@ const PREF_INTERVAL = "prefInterval";
 const PREF_ACCURACY = "prefAccuracy";
 const PREF_DISTANCE_FILTER = "distanceFilter";
 
+const KEY_USERNAME = "username";
+const KEY_PASSWORD = "password";
+
 const String TABLE_GROUPS = 'tableGroups';
 const String TABLE_FOUNTAINS = 'tableFountains';
 const String TABLE_FIELDS = 'tableFields';

@@ -20,12 +20,12 @@ class BlocLogin extends Disposable {
   Stream<ResponseWrapper<LoginResponse>> get userLogin => _userLogin.stream;
 
   BlocLogin() {
-  	_setupAutoFill();
+  	// _setupAutoFill();
   }
   
   _setupAutoFill() async {
 	  final pref = await SharedPreferences.getInstance();
-	  pref.setString("email", "frye-admin@mahlmann.com");
+	  pref.setString("username", "frye-admin@mahlmann.com");
 	  pref.setString("password", "qwerty123");
   }
   

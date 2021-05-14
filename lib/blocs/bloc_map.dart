@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/api/api_client.dart';
+import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/date_formatter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/common/interfaces/exception_handleable.dart';
@@ -18,6 +19,7 @@ import 'package:mahlmann_app/models/map/model_marker.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mt;
 import 'package:rxdart/rxdart.dart' as rx;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BlocMap extends ExceptionHandleable implements Disposable {
 	// Try GetIt sometimes for this things!
@@ -529,7 +531,18 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		);
 		_updateBounds(_fields);
 		
-		_initPositionsTracking();
+		await _initPositionsTracking();
+		await _applyPreferences();
+	}
+	
+	Future _applyPreferences() async {
+		final pref = await SharedPreferences.getInstance();
+		// 1. position tracking
+		final isTracking = pref.getBool(PREF_POSITION_TRACKING) == true;
+		onTrackingPressed(isTracking);
+		// 2. route tracking
+		final showPath = pref.getBool(PREF_ROUTE_TRACKING) == true;
+		onPathSwitchPressed(showPath);
 	}
 	
 	Set<Polygon> _createPolygons() {
@@ -739,7 +752,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	  LocationHelper().locationData.removeListener(_positionChanged);
   }
 
-  void _initPositionsTracking() async {
+  Future _initPositionsTracking() async {
 	  await LocationHelper().init();
 	  final isTracking = await LocationHelper().isTrackingLocation;
 	  isTrackingNotifier.value = isTracking;
@@ -764,9 +777,4 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		}
 	}
 	
-	Future refreshAccordingToSettings() async {
-		// read all settings and react accordingly
-		// 1. position tracking
-		// 2. route tracking
-	}
 }
