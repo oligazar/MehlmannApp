@@ -32,6 +32,14 @@ class MLocalizations {
   
   String get mapMode => "Kartenmodus";
   
+  String get satellite => "Satellite";
+  
+  String get map => "Karte";
+  
+  String get positionTracking => "Aktivieren der Positionsbestimmung";
+  
+  String get routeTracking => "Aktivieren der Routenverfolgung";
+  
   String get plistDebug => "Plist debug";
 
   String get currentPosition => "Aktuelle Position";

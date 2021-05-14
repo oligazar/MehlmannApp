@@ -26,55 +26,51 @@ class ScreenPreferences extends StatelessWidget {
       ),
       body: Container(
           // color: MColors.bgLightGrey,
+        padding: const EdgeInsets.only(top: 24),
           child: SingleChildScrollView(
             child: Column(
               children: [
-                PreferenceGroup(
-                  title: "",
-                  children: <Widget>[
-                    PreferenceSwitch(
-                      prefKey: PREF_POSITION_TRACKING,
-                      title: "Activate position tracking",
-                      // inverted: true,
-                    ),
-                    PreferenceSwitch(
-                      prefKey: PREF_ROUTE_TRACKING,
-                      title: "Activate route tracking",
-                    ),
-                    PreferenceSwitch(
-                      prefKey: PREF_SATELLITE_MODE,
-                      title: loc.mapMode,
-                      subTitleBuilder: (isSatellite) {
-                        return isSatellite ? "Satellite" : "Map";
-                      },
-                    ),
-                    if (Platform.isIOS) Preference(
-                      title: loc.plistDebug,
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  ScreenPlistDebug()),
-                        );
-                      },
-                    ),
-                    Preference(
-                      title: loc.logOut,
-                      onTap: () async {
-                        _logOut(context);
-                      },
-                    ),
-                    FutureBuilder<String>(
-                        future: buildVersion,
-                        builder: (context, snap) {
-                          return Preference(
-                            title: loc.buildVersion,
-                            subTitle: 'v ${snap.data}',
-                          );
-                        }),
-                  ],
-                )
+                PreferenceSwitch(
+                  prefKey: PREF_POSITION_TRACKING,
+                  title: loc.positionTracking,
+                  // inverted: true,
+                ),
+                PreferenceSwitch(
+                  prefKey: PREF_ROUTE_TRACKING,
+                  title: loc.routeTracking,
+                ),
+                PreferenceSwitch(
+                  prefKey: PREF_SATELLITE_MODE,
+                  title: loc.mapMode,
+                  subTitleBuilder: (isSatellite) {
+                    return isSatellite ? loc.satellite : loc.map;
+                  },
+                ),
+                if (Platform.isIOS) Preference(
+                  title: loc.plistDebug,
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              ScreenPlistDebug()),
+                    );
+                  },
+                ),
+                Preference(
+                  title: loc.logOut,
+                  onTap: () async {
+                    _logOut(context);
+                  },
+                ),
+                FutureBuilder<String>(
+                    future: buildVersion,
+                    builder: (context, snap) {
+                      return Preference(
+                        title: loc.buildVersion,
+                        subTitle: 'v ${snap.data}',
+                      );
+                    })
               ],
             ),
           )),
