@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:mahlmann_app/common/api/api_client.dart';
-import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/date_formatter.dart';
 import 'package:mahlmann_app/common/interfaces/disposable.dart';
 import 'package:mahlmann_app/common/interfaces/exception_handleable.dart';
@@ -19,7 +18,6 @@ import 'package:mahlmann_app/models/map/model_marker.dart';
 import 'package:mahlmann_app/common/extensions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mt;
 import 'package:rxdart/rxdart.dart' as rx;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class BlocMap extends ExceptionHandleable implements Disposable {
 	// Try GetIt sometimes for this things!
@@ -28,6 +26,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	final _mapData = rx.BehaviorSubject<MapData>.seeded(MapData());
 	final _isLoading = rx.BehaviorSubject<bool>.seeded(false);
 	final _bounds = rx.BehaviorSubject<LatLngBounds>();
+	final _currentPosition = rx.BehaviorSubject<LatLng>();
 	
 	final _measurement = rx.BehaviorSubject<Measurements>();
 	final ValueNotifier<bool> isTrackingNotifier = ValueNotifier(false);
@@ -61,6 +60,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	Stream<bool> get isLoading => _isLoading.stream;
 	
 	Stream<LatLngBounds> get bounds => _bounds.stream;
+	Stream<LatLng> get currentPosition => _currentPosition.stream;
 	
 	Stream<Measurements> get measurements => _measurement.stream;
 	
@@ -92,6 +92,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	void dispose() {
 		_mapData.close();
 		_bounds.close();
+		_currentPosition.close();
 		_measurement.close();
 		_mode.close();
 		_fieldInfo.close();
@@ -536,13 +537,12 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	}
 	
 	Future _applyPreferences() async {
-		final pref = await SharedPreferences.getInstance();
 		// 1. position tracking
-		final isTracking = pref.getBool(PREF_POSITION_TRACKING) == true;
-		onTrackingPressed(isTracking);
+		final shouldTrackPosition = await Prefs.shouldTrackPosition;
+		onTrackingPressed(shouldTrackPosition == true);
 		// 2. route tracking
-		final showPath = pref.getBool(PREF_ROUTE_TRACKING) == true;
-		onPathSwitchPressed(showPath);
+		final showPath = await Prefs.shouldTrackRoute;
+		onPathSwitchPressed(showPath == true);
 	}
 	
 	Set<Polygon> _createPolygons() {
@@ -730,9 +730,9 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 	}
 
 
-  Future onTrackingPressed(bool isTracking) async {
-		print("isTracking: $isTracking");
-		if (isTracking) {
+  Future onTrackingPressed(bool shouldTrackPosition) async {
+		print("shouldTrackPosition: $shouldTrackPosition");
+		if (shouldTrackPosition) {
 			startTracking();
 		} else {
 			stopTracking();
@@ -770,6 +770,7 @@ class BlocMap extends ExceptionHandleable implements Disposable {
 		if (position?.lat != null && position?.lng != null) {
 			final latLng = LatLng(position.lat, position.lng);
 			_points.add(latLng);
+			_currentPosition.add(latLng);
 			_updateMapData(
 				currentPosition: _createModelMarker(latLng),
 				polylines: shouldShowPath.value == true ? _createPolylines() : null,

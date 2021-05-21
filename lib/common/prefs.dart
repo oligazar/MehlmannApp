@@ -67,4 +67,18 @@ class Prefs {
 		pref.remove(PREF_ADMIN);
 		pref.remove(PREF_LAST_UPDATE);
 	}
+	
+	static Future<bool> get shouldTrackPosition async {
+	  final shouldTrack = await sp.then((sp) => sp.getBool(PREF_POSITION_TRACKING));
+	  if (shouldTrack == null) {
+		  await setShouldTrackPosition(true);
+		  return true;
+	  }
+	  return shouldTrack;
+	}
+	static Future<bool> get shouldTrackRoute => sp.then((sp) => sp.getBool(PREF_ROUTE_TRACKING));
+  
+  static Future setShouldTrackPosition(bool shouldTrack) async {
+	    sp.then((sp) => sp.setBool(PREF_POSITION_TRACKING, shouldTrack));
+  }
 }

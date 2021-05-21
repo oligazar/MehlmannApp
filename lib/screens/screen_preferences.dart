@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mahlmann_app/common/constants.dart';
 import 'package:mahlmann_app/common/extensions.dart';
@@ -8,13 +7,9 @@ import 'package:mahlmann_app/common/functions.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/common/sqlite/db_client.dart';
 import 'package:mahlmann_app/screens/preferences/preference.dart';
-import 'package:mahlmann_app/screens/preferences/preference_group.dart';
 import 'package:mahlmann_app/screens/preferences/preference_switch.dart';
-import 'package:mahlmann_app/screens/screen_login.dart';
 import 'package:mahlmann_app/screens/screen_plist_debug.dart';
 import 'package:mahlmann_app/widgets/dialogs/two_actions_dialog.dart';
-
-import '../app_mahlmann.dart';
 
 class ScreenPreferences extends StatelessWidget {
   @override

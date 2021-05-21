@@ -6,7 +6,6 @@ import 'package:action_cable_stream/action_cable_stream.dart';
 import 'package:action_cable_stream/action_cable_stream_states.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:mahlmann_app/app_mahlmann.dart';
 import 'package:mahlmann_app/blocs/bloc_map.dart';
 import 'package:mahlmann_app/blocs/bloc_markers.dart';
 import 'package:mahlmann_app/common/api/api_base.dart';
@@ -80,6 +79,7 @@ class ViewMap extends StatefulWidget {
 
 class ViewMapState extends State<ViewMap> {
   Completer<GoogleMapController> _controller = Completer();
+  StreamSubscription _boundsSubscription;
   StreamSubscription _mapDataSubscription;
   BitmapDescriptor _iconDrop;
   StreamSubscription<Field> _fieldInfoSubscription;
@@ -354,7 +354,10 @@ class ViewMapState extends State<ViewMap> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   MButton(
-                                    onPressed: _goToCurrentPosition,
+                                    onPressed: () async {
+                                      final location = await currentLocation;
+                                      _goToPosition(location);
+                                    },
                                     icon: Icons.location_on,
                                   ),
                                   MButton(
@@ -476,23 +479,40 @@ class ViewMapState extends State<ViewMap> {
                                                             builder: (context) =>
                                                                 ScreenPreferences()),
                                                       );
-                                                      final pref = await SharedPreferences.getInstance();
-                                                      final isSatelliteMode = pref.getBool(PREF_SATELLITE_MODE) == true;
-                                                      _blocMap.switchMapType(isSatelliteMode);
+                                                      final pref =
+                                                          await SharedPreferences
+                                                              .getInstance();
+                                                      final isSatelliteMode =
+                                                          pref.getBool(
+                                                                  PREF_SATELLITE_MODE) ==
+                                                              true;
+                                                      _blocMap.switchMapType(
+                                                          isSatelliteMode);
                                                       // 1. position tracking
-                                                      final isTracking = pref.getBool(PREF_POSITION_TRACKING) == true;
-                                                      _blocMap.onTrackingPressed(isTracking);
+                                                      final isTracking =
+                                                          await Prefs.shouldTrackPosition;
+                                                      _blocMap
+                                                          .onTrackingPressed(
+                                                              isTracking ==
+                                                                  true);
                                                       // 2. route tracking
-                                                      final showPath = pref.getBool(PREF_ROUTE_TRACKING) == true;
-                                                      _blocMap.onPathSwitchPressed(showPath);
+                                                      final showPath = pref.getBool(
+                                                              PREF_ROUTE_TRACKING) ==
+                                                          true;
+                                                      _blocMap
+                                                          .onPathSwitchPressed(
+                                                              showPath);
                                                     },
                                                     icon: Icons.menu,
                                                     isActive: !isMenuOpen,
                                                   ),
                                                   if (isMenuOpen)
                                                     MButton(
-                                                      onPressed:
-                                                          _goToCurrentPosition,
+                                                      onPressed: () async {
+                                                        final location =
+                                                            await currentLocation;
+                                                        _goToPosition(location);
+                                                      },
                                                       icon: Icons.location_on,
                                                     ),
                                                   if (isMenuOpen)
@@ -681,6 +701,7 @@ class ViewMapState extends State<ViewMap> {
   dispose() async {
     super.dispose();
     _mapDataSubscription?.cancel();
+    _boundsSubscription?.cancel();
     _fieldInfoSubscription?.cancel();
     _fountainInfoSubscription?.cancel();
 
@@ -692,19 +713,21 @@ class ViewMapState extends State<ViewMap> {
       _controller.complete(controller);
       _blocMarkers.bounds = await controller.getVisibleRegion();
     }
-    _mapDataSubscription = _blocMap.bounds.listen((data) async {
-      if (data != null) {
-        await _zoomFitBounds(data);
+    _boundsSubscription = _blocMap.bounds.listen((bounds) async {
+      if (bounds != null) {
+        await _zoomFitBounds(bounds);
+      }
+    });
+    _mapDataSubscription = _blocMap.currentPosition.listen((location) async {
+      if (location != null) {
+        _goToPosition(location);
       }
     });
   }
 
-  Future<void> _goToCurrentPosition() async {
-    final location = await currentLocation;
-    if (location != null) {
-      await _zoomFitLocation(location);
-      _blocMap.markCurrentPosition(location);
-    }
+  Future<void> _goToPosition(LatLng location) async {
+    await _zoomFitLocation(location);
+    _blocMap.markCurrentPosition(location);
   }
 
   Future _zoomFitLocation(LatLng location) async {
