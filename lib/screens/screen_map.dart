@@ -732,7 +732,7 @@ class ViewMapState extends State<ViewMap> {
 
   Future _zoomFitLocation(LatLng location) async {
     await _controller.future.then((controller) {
-      controller.animateCamera(CameraUpdate.newLatLngZoom(location, 12.8));
+      controller.animateCamera(CameraUpdate.newLatLng(location));
       controller.getVisibleRegion();
     });
   }
