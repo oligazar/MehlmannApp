@@ -156,7 +156,7 @@ class LocationHelper {
           accuracy: accuracy,
           distanceFilter: distanceFilter,
         ),
-        autoStop: false,
+        autoStop: true,
         androidSettings: AndroidSettings(
             accuracy: LocationAccuracy.NAVIGATION,
             interval: interval,

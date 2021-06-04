@@ -8,6 +8,7 @@ import 'package:mahlmann_app/common/lang/m_localizations.dart';
 import 'package:mahlmann_app/common/prefs.dart';
 import 'package:mahlmann_app/models/response_wrapper.dart';
 import 'package:mahlmann_app/models/login_response.dart';
+import 'package:mahlmann_app/screens/screen_plist_debug.dart';
 import 'package:mahlmann_app/widgets/preference_radio_list.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlmann_app/common/extensions.dart';
@@ -51,44 +52,65 @@ class _ViewLoginState extends State<ViewLogin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: StreamBuilder<ResponseWrapper<LoginResponse>>(
-            stream: _bloc.userLogin,
-            builder: (context, snap) {
-              final result = snap.data;
-              return Container(
-                key: Key('streamBuilder'),
-                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: <Widget>[
-                      Form(
-                        key: _formKey,
-                        autovalidateMode: _autoValidate == true
-                            ? AutovalidateMode.always
-                            : AutovalidateMode.disabled,
-                        child: _formUI(context),
-                      ),
-                      StreamBuilder<bool>(
-                          stream: _bloc.showBackendSettings,
-                          builder: (context, snapshot) {
-                            final shouldShow = snapshot.data == true;
-                            return shouldShow ? _backendSetting() : Container();
-                          }),
-                      const SizedBox(height: 20),
-                      _progressIndication(result),
-                      const SizedBox(height: 20),
+      body: Stack(
+        children: [
+          Center(
+            child: StreamBuilder<ResponseWrapper<LoginResponse>>(
+                stream: _bloc.userLogin,
+                builder: (context, snap) {
+                  final result = snap.data;
+                  return Container(
+                    key: Key('streamBuilder'),
+                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: <Widget>[
+                          Form(
+                            key: _formKey,
+                            autovalidateMode: _autoValidate == true
+                                ? AutovalidateMode.always
+                                : AutovalidateMode.disabled,
+                            child: _formUI(context),
+                          ),
+                          StreamBuilder<bool>(
+                              stream: _bloc.showBackendSettings,
+                              builder: (context, snapshot) {
+                                final shouldShow = snapshot.data == true;
+                                return shouldShow
+                                    ? _backendSetting()
+                                    : Container();
+                              }),
+                          const SizedBox(height: 20),
+                          _progressIndication(result),
+                          const SizedBox(height: 20),
 //                  Spacer(),
-                      FutureBuilder<String>(
-                          future: buildVersion,
-                          builder: (context, snap) {
-                            return Text("v ${snap.data}.");
-                          }),
-                    ],
-                  ),
-                ),
-              );
-            }),
+                          FutureBuilder<String>(
+                              future: buildVersion,
+                              builder: (context, snap) {
+                                return Text("v ${snap.data}.");
+                              }),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+          ),
+          Positioned(
+            right: 20,
+            bottom: 20,
+            child: TextButton(
+              child: Text(context.loc.plistDebug),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          ScreenPlistDebug()),
+                );
+              },
+            ),
+          )
+        ],
       ),
     );
   }
@@ -149,47 +171,46 @@ class _ViewLoginState extends State<ViewLogin> {
 
   Widget _buildTypeAheadEmailField(BuildContext context) {
     return FutureBuilder(
-      future: _readLoginValues(),
-      builder: (context, snapshot) {
-        final map = snapshot.data ?? {};
-        final email = map[KEY_USERNAME];
-        final password = map[KEY_PASSWORD];
-        return TypeAheadFormField(
-          validator: _loc.errorInvalidEmail.ifInvalidEmail,
-          onSaved: (String val) {
-            _bloc.email = val;
-          },
-          textFieldConfiguration: TextFieldConfiguration(
-              controller: _emailController,
-              autofocus: true,
-              style: DefaultTextStyle.of(context).style,
-              decoration: textFieldDecoration(context).copyWith(
-                labelText: _loc.promptEmail,
-                hintText: _loc.hintEmail,
-              ),
-              onChanged: (String val) {
-                _bloc.email = val;
-              }),
-          suggestionsCallback: (pattern) async {
-            final map = await _readLoginValues() ?? {};
-            final email = map[KEY_USERNAME];
-            return email != null ? [email] : [];
-          },
-          itemBuilder: (context, suggestion) {
-            return ListTile(
-              title: Text(suggestion),
-            );
-          },
-          noItemsFoundBuilder: (context) => null,
-          transitionBuilder: (context, box, controller) => box,
-          onSuggestionSelected: (suggestion) {
-            print("$suggestion selected");
-            _emailController.text = email;
-            _passwordController.text = password;
-          },
-        );
-      }
-    );
+        future: _readLoginValues(),
+        builder: (context, snapshot) {
+          final map = snapshot.data ?? {};
+          final email = map[KEY_USERNAME];
+          final password = map[KEY_PASSWORD];
+          return TypeAheadFormField(
+            validator: _loc.errorInvalidEmail.ifInvalidEmail,
+            onSaved: (String val) {
+              _bloc.email = val;
+            },
+            textFieldConfiguration: TextFieldConfiguration(
+                controller: _emailController,
+                autofocus: true,
+                style: DefaultTextStyle.of(context).style,
+                decoration: textFieldDecoration(context).copyWith(
+                  labelText: _loc.promptEmail,
+                  hintText: _loc.hintEmail,
+                ),
+                onChanged: (String val) {
+                  _bloc.email = val;
+                }),
+            suggestionsCallback: (pattern) async {
+              final map = await _readLoginValues() ?? {};
+              final email = map[KEY_USERNAME];
+              return email != null ? [email] : [];
+            },
+            itemBuilder: (context, suggestion) {
+              return ListTile(
+                title: Text(suggestion),
+              );
+            },
+            noItemsFoundBuilder: (context) => null,
+            transitionBuilder: (context, box, controller) => box,
+            onSuggestionSelected: (suggestion) {
+              print("$suggestion selected");
+              _emailController.text = email;
+              _passwordController.text = password;
+            },
+          );
+        });
   }
 
   InputDecoration get _passwordDecoration {
